@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Il Mio Database di Film (v7.5 - Cloud Firebase)</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+
+    <style>
+        .movie-actions a { background-color: #e94560; padding: 10px 16px; font-size: 1em; font-weight: bold; border: none; border-radius: 5px; text-decoration: none; color: white; transition: background-color 0.3s; }
+        .movie-actions a:hover { background-color: #c03952; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a2e; color: #e0e0e0; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        h1 { color: #e94560; margin-bottom: 30px; text-align: center; }
+        .container { width: 90%; max-width: 1200px; background-color: #0f3460; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); margin-bottom: 40px; }
+        label { display: block; margin-bottom: 8px; color: #b0b0b0; }
+        input[type="text"], textarea, select { width: calc(100% - 20px); padding: 12px; margin-bottom: 20px; border: 1px solid #2e4a81; border-radius: 5px; background-color: #0a1f3c; color: #e0e0e0; font-size: 1em; box-sizing: border-box; }
+        .radio-group { margin-bottom: 20px; display: flex; gap: 20px; align-items: center; background: #0a1f3c; padding: 10px; border-radius: 5px; border: 1px solid #2e4a81; }
+        .radio-group label { margin-bottom: 0; display: inline; cursor: pointer; }
+        button { background-color: #e94560; color: white; padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 1.1em; transition: background-color 0.3s ease; }
+        button:hover { background-color: #c03952; }
+        .movie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; justify-content: center; }
+        .movie-card { background-color: #1a1a2e; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); transition: transform 0.2s ease; display: flex; flex-direction: column; position: relative; }
+        .movie-card:hover { transform: translateY(-5px); }
+        .movie-card img { width: 100%; height: auto; object-fit: cover; border-bottom: 2px solid #0f3460; }
+        .lang-badge { padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 10px; vertical-align: middle; text-transform: uppercase; }
+        .lang-ita { background-color: #27ae60; color: white; }
+        .lang-sub { background-color: #f39c12; color: white; }
+        .movie-info { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .movie-info h3 { color: #e94560; margin-top: 0; margin-bottom: 10px; font-size: 1.4em; }
+        .movie-actions { margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .movie-actions .edit-btn, .movie-actions .delete-btn { background-color: transparent; color: #a0a0a0; border: 1px solid #555; padding: 6px 10px; font-size: 0.8em; }
+        .modal { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); backdrop-filter: blur(5px); justify-content: center; align-items: center; }
+        .modal-content { background-color: #0f3460; margin: auto; padding: 30px; border-radius: 10px; width: 80%; max-width: 500px; }
+        .close-button { color: #aaaaaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .input-group { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+        .input-group input { flex-grow: 1; margin-bottom: 0; }
+        .copy-btn { font-size: 0.9em; padding: 12px 15px; background-color: #2980b9; flex-shrink: 0; }
+    </style>
+</head>
+<body>
+    <h1>Il Mio Database di Film Online</h1>
+
+    <div class="container form-section">
+        <h2>Aggiungi un Film da TMDB</h2>
+        <label for="tmdb-search">Cerca Film (Titolo):</label>
+        <input type="text" id="tmdb-search" placeholder="Es. Inception">
+        <button id="search-movie-btn">Cerca Film</button>
+        <p id="search-status" style="color: #e94560; margin-top: 10px;"></p>
+        
+        <div id="search-results-container" style="display:none; margin-top: 20px;">
+            <h3>Risultati della ricerca:</h3>
+            <div id="search-results-list" class="movie-grid"></div>
+        </div>
+
+        <div id="movie-details-form" style="display: none; margin-top: 20px;">
+            <h3>Dettagli Film Trovato:</h3>
+            <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                <img id="movie-poster-display" src="" alt="Locandina" style="max-width: 150px; border-radius: 5px;">
+                <div>
+                    <p><strong>Titolo:</strong> <span id="movie-title-display"></span></p>
+                    <p><strong>Anno:</strong> <span id="movie-year-display"></span></p>
+                    <p><strong>Durata:</strong> <span id="movie-runtime-display"></span> min</p>
+                </div>
+            </div>
+
+            <label>Lingua Audio:</label>
+            <div class="radio-group">
+                <input type="radio" id="audio-ita" name="audio-lang" value="Italiano" checked>
+                <label for="audio-ita">Italiano 🇮🇹</label>
+                <input type="radio" id="audio-sub" name="audio-lang" value="Sub ITA">
+                <label for="audio-sub">Sub ITA 💬</label>
+            </div>
+
+            <label for="film-link">Link al Film (Opzionale):</label>
+            <input type="text" id="film-link" placeholder="URL del film">
+            <label for="trailer-link">Link al Trailer (Opzionale):</label>
+            <input type="text" id="trailer-link" placeholder="URL del trailer">
+            <label for="subtitle-link">Link Sottotitoli (SRT, Opzionale):</label>
+            <input type="text" id="subtitle-link" placeholder="URL del file SRT">
+            <label for="credits-link">Link al Video Crediti (Opzionale):</label>
+            <input type="text" id="credits-link" placeholder="URL del video dei crediti">
+            <button id="add-movie-btn">Aggiungi Film Online</button>
+        </div>
+    </div>
+
+    <div class="container movie-list-section">
+        <h2>I Miei Film (Sincronizzati)</h2>
+        <div id="latest-movies-row" class="movie-grid" style="margin-bottom: 40px; border-bottom: 2px solid #0f3460; padding-bottom: 20px;"></div>
+        
+        <div style="margin-bottom: 20px; text-align: center;">
+            <label for="sort-order">Ordina e filtra:</label>
+            <select id="sort-order" style="max-width: 300px;">
+                <option value="recent">Più Recenti</option>
+                <option value="titleAsc">Titolo (A-Z)</option>
+                <option value="comingSoon">Solo "Prossimamente"</option>
+            </select>
+        </div>
+        <div id="movie-list" class="movie-grid">
+            <p class="no-results">Connessione al database in corso...</p>
+        </div>
+    </div>
+
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h3>Modifica Film</h3>
+            <label>Lingua Audio:</label>
+            <div class="radio-group">
+                <input type="radio" id="edit-audio-ita" name="edit-audio-lang" value="Italiano">
+                <label for="edit-audio-ita">Italiano 🇮🇹</label>
+                <input type="radio" id="edit-audio-sub" name="edit-audio-lang" value="Sub ITA">
+                <label for="edit-audio-sub">Sub ITA 💬</label>
+            </div>
+            <label for="edit-film-link">Link al Film:</label>
+            <div class="input-group"><input type="text" id="edit-film-link"><button class="copy-btn" data-target="edit-film-link">Copia</button></div>
+            <label for="edit-trailer-link">Link al Trailer:</label>
+            <div class="input-group"><input type="text" id="edit-trailer-link"><button class="copy-btn" data-target="edit-trailer-link">Copia</button></div>
+            <label for="edit-subtitle-link">Link Sottotitoli:</label>
+            <div class="input-group"><input type="text" id="edit-subtitle-link"><button class="copy-btn" data-target="edit-subtitle-link">Copia</button></div>
+            <label for="edit-credits-link">Link Crediti:</label>
+            <div class="input-group"><input type="text" id="edit-credits-link"><button class="copy-btn" data-target="edit-credits-link">Copia</button></div>
+            <button id="save-edit-btn">Salva Modifiche Online</button>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURAZIONE FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyDx98bazXdQE1ESCcZdzXeYhkXnsJZBpjvc",
+            authDomain: "cinema-database-b2773.firebaseapp.com",
+            databaseURL: "https://cinema-database-b2773-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "cinema-database-b2773",
+            storageBucket: "cinema-database-b2773.appspot.com",
+            messagingSenderId: "493534715462",
+            appId: "1:493534715462:web:41ada890b26bc8e8803447",
+            measurementId: "G-6P2ZR9R741"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const API_KEY = '4d5149e0894f071e682f4fc0401624a4';
+        const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+        const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
+
+        let currentMovieData = null;
+        let editingMovieId = null;
+        let allMovies = [];
+
+        const tmdbSearchInput = document.getElementById('tmdb-search');
+        const movieDetailsForm = document.getElementById('movie-details-form');
+        const movieListDiv = document.getElementById('movie-list');
+        const latestMoviesRow = document.getElementById('latest-movies-row');
+        const editModal = document.getElementById('edit-modal');
+
+        // CARICAMENTO IN TEMPO REALE DAL CLOUD
+        function loadMovies() {
+            db.ref('movies').on('value', (snapshot) => {
+                allMovies = [];
+                snapshot.forEach((childSnapshot) => {
+                    allMovies.push(childSnapshot.val());
+                });
+                displayMovies(allMovies);
+            });
+        }
+
+        // SALVATAGGIO IN CLOUD
+        function saveMovies(movies) {
+            db.ref('movies').set(movies);
+        }
+
+        function createMovieCardHtml(movie, isLatestRow = false) {
+            const playButtonHtml = (movie.filmLink && movie.filmLink.trim() !== '') 
+                ? `<a href="${movie.filmLink}" target="_blank">Guarda Film</a>` 
+                : `<span style="color:#e74c3c; font-weight:bold;">PROSSIMAMENTE</span>`;
+
+            const langClass = movie.audioLanguage === 'Sub ITA' ? 'lang-sub' : 'lang-ita';
+            const langLabel = movie.audioLanguage === 'Sub ITA' ? 'SUB ITA' : 'ITA';
+            const langBadge = `<span class="lang-badge ${langClass}">${langLabel}</span>`;
+
+            return `
+                <img src="${movie.posterUrl}" onerror="this.src='https://placehold.co/200x300?text=No+Poster';">
+                <div class="movie-info">
+                    <div>
+                        <h3>${movie.title} (${movie.year}) ${langBadge}</h3>
+                        <p><strong>Regia:</strong> ${movie.director}</p>
+                        <p style="font-size:0.9em; color:#bbb;">${isLatestRow ? '' : movie.overview.substring(0, 100) + '...'}</p>
+                    </div>
+                    <div class="movie-actions">
+                        ${playButtonHtml}
+                        ${movie.trailerLink ? `<a href="${movie.trailerLink}" target="_blank">Trailer</a>` : ''}
+                        <button class="edit-btn" data-id="${movie.id}">Modifica</button>
+                        <button class="delete-btn" data-id="${movie.id}">Elimina</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayMovies(movies) {
+            latestMoviesRow.innerHTML = '';
+            const latest = [...movies].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).slice(0, 4);
+            latest.forEach(m => {
+                const card = document.createElement('div');
+                card.classList.add('movie-card');
+                card.innerHTML = createMovieCardHtml(m, true);
+                latestMoviesRow.appendChild(card);
+            });
+
+            movieListDiv.innerHTML = '';
+            let filtered = [...movies];
+            const sort = document.getElementById('sort-order').value;
+            
+            if(sort === 'titleAsc') filtered.sort((a,b) => a.title.localeCompare(b.title));
+            if(sort === 'recent') filtered.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+            if(sort === 'comingSoon') filtered = filtered.filter(m => !m.filmLink);
+
+            if(filtered.length === 0) {
+                movieListDiv.innerHTML = '<p class="no-results">Nessun film trovato.</p>';
+            }
+
+            filtered.forEach(m => {
+                const card = document.createElement('div');
+                card.classList.add('movie-card');
+                card.innerHTML = createMovieCardHtml(m, false);
+                movieListDiv.appendChild(card);
+            });
+
+            document.querySelectorAll('.delete-btn').forEach(b => b.onclick = () => deleteMovie(b.dataset.id));
+            document.querySelectorAll('.edit-btn').forEach(b => b.onclick = () => openEditModal(b.dataset.id));
+        }
+
+        async function searchMovies() {
+            const query = tmdbSearchInput.value.trim();
+            if(!query) return;
+            document.getElementById('search-status').textContent = 'Ricerca...';
+            const res = await fetch(`${TMDB_BASE_URL}/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}&language=it-IT`);
+            const data = await res.json();
+            
+            const resultsList = document.getElementById('search-results-list');
+            resultsList.innerHTML = '';
+            data.results.forEach(movie => {
+                const div = document.createElement('div');
+                div.className = 'movie-card';
+                div.innerHTML = `
+                    <img src="${IMAGE_BASE_URL}${movie.poster_path}">
+                    <div class="movie-info">
+                        <h3>${movie.title}</h3>
+                        <button onclick="selectMovie(${movie.id})">Seleziona</button>
+                    </div>
+                `;
+                resultsList.appendChild(div);
+            });
+            document.getElementById('search-results-container').style.display = 'block';
+            document.getElementById('search-status').textContent = '';
+        }
+
+        async function selectMovie(id) {
+            const res = await fetch(`${TMDB_BASE_URL}/movie/${id}?api_key=${API_KEY}&language=it-IT&append_to_response=credits`);
+            const movie = await res.json();
+            const director = movie.credits.crew.find(c => c.job === 'Director')?.name || 'N/A';
+            
+            currentMovieData = {
+                id: String(movie.id),
+                title: movie.title,
+                year: movie.release_date?.substring(0,4),
+                director: director,
+                posterUrl: IMAGE_BASE_URL + movie.poster_path,
+                overview: movie.overview,
+                runtime: movie.runtime,
+                timestamp: Date.now()
+            };
+
+            document.getElementById('movie-title-display').textContent = movie.title;
+            document.getElementById('movie-poster-display').src = IMAGE_BASE_URL + movie.poster_path;
+            movieDetailsForm.style.display = 'block';
+            document.getElementById('search-results-container').style.display = 'none';
+        }
+
+        function deleteMovie(id) {
+            if(confirm('Eliminare il film dal cloud?')) {
+                const updatedMovies = allMovies.filter(m => m.id !== id);
+                saveMovies(updatedMovies);
+            }
+        }
+
+        function openEditModal(id) {
+            const movie = allMovies.find(m => m.id === id);
+            editingMovieId = id;
+            document.getElementById('edit-film-link').value = movie.filmLink || '';
+            document.getElementById('edit-trailer-link').value = movie.trailerLink || '';
+            document.getElementById('edit-subtitle-link').value = movie.subtitleLink || '';
+            document.getElementById('edit-credits-link').value = movie.creditsLink || '';
+            if(movie.audioLanguage === 'Sub ITA') document.getElementById('edit-audio-sub').checked = true;
+            else document.getElementById('edit-audio-ita').checked = true;
+            editModal.style.display = 'flex';
+        }
+
+        document.getElementById('search-movie-btn').onclick = searchMovies;
+
+        document.getElementById('add-movie-btn').onclick = () => {
+            currentMovieData.filmLink = document.getElementById('film-link').value;
+            currentMovieData.trailerLink = document.getElementById('trailer-link').value;
+            currentMovieData.subtitleLink = document.getElementById('subtitle-link').value;
+            currentMovieData.creditsLink = document.getElementById('credits-link').value;
+            currentMovieData.audioLanguage = document.querySelector('input[name="audio-lang"]:checked').value;
+            
+            allMovies.push(currentMovieData);
+            saveMovies(allMovies);
+            movieDetailsForm.style.display = 'none';
+            tmdbSearchInput.value = '';
+        };
+
+        document.getElementById('save-edit-btn').onclick = () => {
+            const idx = allMovies.findIndex(m => m.id === editingMovieId);
+            allMovies[idx].filmLink = document.getElementById('edit-film-link').value;
+            allMovies[idx].trailerLink = document.getElementById('edit-trailer-link').value;
+            allMovies[idx].subtitleLink = document.getElementById('edit-subtitle-link').value;
+            allMovies[idx].creditsLink = document.getElementById('edit-credits-link').value;
+            allMovies[idx].audioLanguage = document.querySelector('input[name="edit-audio-lang"]:checked').value;
+            
+            saveMovies(allMovies);
+            editModal.style.display = 'none';
+        };
+
+        document.querySelector('.close-button').onclick = () => editModal.style.display = 'none';
+        window.onclick = (e) => { if(e.target == editModal) editModal.style.display = 'none'; };
+        document.getElementById('sort-order').onchange = () => displayMovies(allMovies);
+
+        loadMovies();
+    </script>
+</body>
+</html>
