@@ -328,6 +328,26 @@
         window.onclick = (e) => { if(e.target == editModal) editModal.style.display = 'none'; };
         document.getElementById('sort-order').onchange = () => displayMovies(allMovies);
 
+        // Funzione speciale per importare il vecchio file JSON su Firebase
+window.importaSuFirebase = (event) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const movies = JSON.parse(e.target.result);
+            if (Array.isArray(movies)) {
+                db.ref('movies').set(movies)
+                .then(() => alert("Importazione completata con successo!"))
+                .catch(err => alert("Errore nel caricamento: " + err));
+            } else {
+                alert("Il file non sembra contenere una lista valida.");
+            }
+        } catch (err) {
+            alert("Errore nella lettura del file JSON.");
+        }
+    };
+    reader.readAsText(event.target.files[0]);
+};
+        cinema_v75.html
         loadMovies();
     </script>
 </body>
