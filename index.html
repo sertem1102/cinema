@@ -87,6 +87,9 @@
 
     <div class="container movie-list-section">
         <h2>I Miei Film (Sincronizzati)</h2>
+        <input type="file" id="import-json-cloud" accept=".json" onchange="importaSuFirebase(event)" style="display:none;">
+        <button onclick="document.getElementById('import-json-cloud').click()" style="background-color: #27ae60; margin-bottom: 20px;">📂 Importa Vecchio Database (.json)</button>
+
         <div id="latest-movies-row" class="movie-grid" style="margin-bottom: 40px; border-bottom: 2px solid #0f3460; padding-bottom: 20px;"></div>
         
         <div style="margin-bottom: 20px; text-align: center;">
@@ -155,7 +158,6 @@
         const latestMoviesRow = document.getElementById('latest-movies-row');
         const editModal = document.getElementById('edit-modal');
 
-        // CARICAMENTO IN TEMPO REALE DAL CLOUD
         function loadMovies() {
             db.ref('movies').on('value', (snapshot) => {
                 allMovies = [];
@@ -166,7 +168,6 @@
             });
         }
 
-        // SALVATAGGIO IN CLOUD
         function saveMovies(movies) {
             db.ref('movies').set(movies);
         }
@@ -328,26 +329,27 @@
         window.onclick = (e) => { if(e.target == editModal) editModal.style.display = 'none'; };
         document.getElementById('sort-order').onchange = () => displayMovies(allMovies);
 
-        // Funzione speciale per importare il vecchio file JSON su Firebase
-window.importaSuFirebase = (event) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            const movies = JSON.parse(e.target.result);
-            if (Array.isArray(movies)) {
-                db.ref('movies').set(movies)
-                .then(() => alert("Importazione completata con successo!"))
-                .catch(err => alert("Errore nel caricamento: " + err));
-            } else {
-                alert("Il file non sembra contenere una lista valida.");
-            }
-        } catch (err) {
-            alert("Errore nella lettura del file JSON.");
-        }
-    };
-    reader.readAsText(event.target.files[0]);
-};
-        cinema_v75.html
+        // FUNZIONE IMPORTAZIONE
+        window.importaSuFirebase = (event) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const movies = JSON.parse(e.target.result);
+                    if (Array.isArray(movies)) {
+                        db.ref('movies').set(movies)
+                        .then(() => alert("Importazione completata con successo!"))
+                        .catch(err => alert("Errore nel caricamento: " + err));
+                    } else {
+                        alert("Il file non sembra contenere una lista valida.");
+                    }
+                } catch (err) {
+                    alert("Errore nella lettura del file JSON.");
+                }
+            };
+            reader.readAsText(event.target.files[0]);
+        };
+
+        // AVVIO
         loadMovies();
     </script>
 </body>
