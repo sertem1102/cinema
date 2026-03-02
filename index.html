@@ -169,7 +169,7 @@
         }
 
         function saveMovies(movies) {
-            db.ref('movies').set(movies);
+            db.ref('/').set(movies);
         }
 
         function createMovieCardHtml(movie, isLatestRow = false) {
