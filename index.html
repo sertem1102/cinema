@@ -159,7 +159,7 @@
         const editModal = document.getElementById('edit-modal');
 
         function loadMovies() {
-            db.ref('movies').on('value', (snapshot) => {
+            db.ref('/').on('value', (snapshot) => {
                 allMovies = [];
                 snapshot.forEach((childSnapshot) => {
                     allMovies.push(childSnapshot.val());
