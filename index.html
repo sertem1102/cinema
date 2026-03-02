@@ -336,7 +336,7 @@
                 try {
                     const movies = JSON.parse(e.target.result);
                     if (Array.isArray(movies)) {
-                        db.ref('movies').set(movies)
+                        db.ref('/').set(movies)
                         .then(() => alert("Importazione completata con successo!"))
                         .catch(err => alert("Errore nel caricamento: " + err));
                     } else {
