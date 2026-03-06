@@ -42,15 +42,12 @@
 </head>
 <body>
     <h1>Il Mio Database di Film Online</h1>
+
     <div style="text-align: center; margin-bottom: 20px;">
         <button onclick="loginAdmin()" style="background-color: #e94560; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
             🔓 Accedi per Modificare
         </button>
     </div>
-
-    <div class="container form-section">
-        <h2>Aggiungi un Film da TMDB</h2>
-        ...
 
     <div class="container form-section">
         <h2>Aggiungi un Film da TMDB</h2>
@@ -151,47 +148,27 @@
             measurementId: "G-6P2ZR9R741"
         };
 
-        // Inizializza Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const auth = firebase.auth();
-
-// Funzione per accedere e sbloccare la scrittura
-function loginAdmin() {
-    const email = prompt("Inserisci la tua email:");
-    const password = prompt("Inserisci la tua password:");
-
-    auth.signInWithEmailAndPassword(email, password)
-    .then((userCredential) => {
-        alert("Accesso effettuato! Ora puoi aggiungere film.");
-        // Mostriamo il tasto aggiungi se lo abbiamo nascosto
-        const btn = document.getElementById("btn-aggiungi");
-        if(btn) btn.style.display = "block";
-    })
-    .catch((error) => {
-        alert("Errore: " + error.message);
-    });
-}
-
-        window.loginAdmin = function() {
-    const email = prompt("Inserisci la tua email:");
-    const password = prompt("Inserisci la tua password:");
-
-    if (email && password) {
-        auth.signInWithEmailAndPassword(email, password)
-            .then(() => {
-                alert("Accesso effettuato con successo! Ora puoi inserire i film.");
-                // Ricarichiamo la pagina per aggiornare i permessi di scrittura
-                location.reload();
-            })
-            .catch((error) => {
-                alert("Errore di accesso: " + error.message);
-            });
-    }
-};
-
+        // Inizializza Firebase (UNICA VOLTA)
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        const auth = firebase.auth();
+
+        // Funzione per accedere
+        window.loginAdmin = function() {
+            const email = prompt("Inserisci la tua email:");
+            const password = prompt("Inserisci la tua password:");
+
+            if (email && password) {
+                auth.signInWithEmailAndPassword(email, password)
+                    .then(() => {
+                        alert("Accesso effettuato! Ora puoi modificare il database.");
+                        location.reload();
+                    })
+                    .catch((error) => {
+                        alert("Errore di accesso: " + error.message);
+                    });
+            }
+        };
 
         const API_KEY = '4d5149e0894f071e682f4fc0401624a4';
         const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
@@ -207,37 +184,18 @@ function loginAdmin() {
         const latestMoviesRow = document.getElementById('latest-movies-row');
         const editModal = document.getElementById('edit-modal');
 
+        // Caricamento Film
         function loadMovies() {
             db.ref('/').on('value', (snapshot) => {
                 allMovies = [];
-                snapshot.forEach((childSnapshot) => {
-                    allMovies.push(childSnapshot.val());
-                });
+                const data = snapshot.val();
+                if (data) {
+                    allMovies = Array.isArray(data) ? data : Object.values(data);
+                }
                 displayMovies(allMovies);
             });
         }
 
-        // Inizializzazione corretta
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const auth = firebase.auth(); // Questa riga è fondamentale!
-
-// La funzione che deve scattare al click
-window.loginAdmin = function() {
-    const email = prompt("Inserisci la tua email:");
-    const password = prompt("Inserisci la tua password:");
-
-    if (email && password) {
-        auth.signInWithEmailAndPassword(email, password)
-            .then(() => {
-                alert("Accesso effettuato! Ora puoi modificare.");
-                location.reload(); // Ricarica per attivare i permessi
-            })
-            .catch((error) => {
-                alert("Errore: " + error.message);
-            });
-    }
-};
         function saveMovies(movies) {
             db.ref('/').set(movies);
         }
@@ -257,7 +215,7 @@ window.loginAdmin = function() {
                     <div>
                         <h3>${movie.title} (${movie.year}) ${langBadge}</h3>
                         <p><strong>Regia:</strong> ${movie.director}</p>
-                        <p style="font-size:0.9em; color:#bbb;">${isLatestRow ? '' : movie.overview.substring(0, 100) + '...'}</p>
+                        <p style="font-size:0.9em; color:#bbb;">${isLatestRow ? '' : (movie.overview ? movie.overview.substring(0, 100) + '...' : '')}</p>
                     </div>
                     <div class="movie-actions">
                         ${playButtonHtml}
@@ -345,6 +303,8 @@ window.loginAdmin = function() {
 
             document.getElementById('movie-title-display').textContent = movie.title;
             document.getElementById('movie-poster-display').src = IMAGE_BASE_URL + movie.poster_path;
+            document.getElementById('movie-year-display').textContent = movie.release_date?.substring(0,4);
+            document.getElementById('movie-runtime-display').textContent = movie.runtime;
             movieDetailsForm.style.display = 'block';
             document.getElementById('search-results-container').style.display = 'none';
         }
@@ -381,6 +341,7 @@ window.loginAdmin = function() {
             saveMovies(allMovies);
             movieDetailsForm.style.display = 'none';
             tmdbSearchInput.value = '';
+            alert("Film aggiunto!");
         };
 
         document.getElementById('save-edit-btn').onclick = () => {
@@ -399,7 +360,6 @@ window.loginAdmin = function() {
         window.onclick = (e) => { if(e.target == editModal) editModal.style.display = 'none'; };
         document.getElementById('sort-order').onchange = () => displayMovies(allMovies);
 
-        // FUNZIONE IMPORTAZIONE
         window.importaSuFirebase = (event) => {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -407,14 +367,10 @@ window.loginAdmin = function() {
                     const movies = JSON.parse(e.target.result);
                     if (Array.isArray(movies)) {
                         db.ref('/').set(movies)
-                        .then(() => alert("Importazione completata con successo!"))
-                        .catch(err => alert("Errore nel caricamento: " + err));
-                    } else {
-                        alert("Il file non sembra contenere una lista valida.");
+                        .then(() => alert("Importazione completata!"))
+                        .catch(err => alert("Errore: " + err));
                     }
-                } catch (err) {
-                    alert("Errore nella lettura del file JSON.");
-                }
+                } catch (err) { alert("Errore nel file JSON."); }
             };
             reader.readAsText(event.target.files[0]);
         };
