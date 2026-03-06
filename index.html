@@ -173,6 +173,23 @@ function loginAdmin() {
     });
 }
 
+        window.loginAdmin = function() {
+    const email = prompt("Inserisci la tua email:");
+    const password = prompt("Inserisci la tua password:");
+
+    if (email && password) {
+        auth.signInWithEmailAndPassword(email, password)
+            .then(() => {
+                alert("Accesso effettuato con successo! Ora puoi inserire i film.");
+                // Ricarichiamo la pagina per aggiornare i permessi di scrittura
+                location.reload();
+            })
+            .catch((error) => {
+                alert("Errore di accesso: " + error.message);
+            });
+    }
+};
+
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
@@ -200,6 +217,27 @@ function loginAdmin() {
             });
         }
 
+        // Inizializzazione corretta
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const auth = firebase.auth(); // Questa riga è fondamentale!
+
+// La funzione che deve scattare al click
+window.loginAdmin = function() {
+    const email = prompt("Inserisci la tua email:");
+    const password = prompt("Inserisci la tua password:");
+
+    if (email && password) {
+        auth.signInWithEmailAndPassword(email, password)
+            .then(() => {
+                alert("Accesso effettuato! Ora puoi modificare.");
+                location.reload(); // Ricarica per attivare i permessi
+            })
+            .catch((error) => {
+                alert("Errore: " + error.message);
+            });
+    }
+};
         function saveMovies(movies) {
             db.ref('/').set(movies);
         }
