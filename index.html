@@ -184,17 +184,20 @@
         const latestMoviesRow = document.getElementById('latest-movies-row');
         const editModal = document.getElementById('edit-modal');
 
-        // Caricamento Film
-        function loadMovies() {
-            db.ref('/').on('value', (snapshot) => {
-                allMovies = [];
-                const data = snapshot.val();
-                if (data) {
-                    allMovies = Array.isArray(data) ? data : Object.values(data);
-                }
-                displayMovies(allMovies);
-            });
+       function loadMovies() {
+    // Puntiamo alla radice '/' perché i tuoi film sono lì (0, 1, 2...)
+    db.ref('/').on('value', (snapshot) => {
+        allMovies = [];
+        const data = snapshot.val();
+        if (data) {
+            // Trasformiamo l'oggetto o l'array in una lista pulita
+            allMovies = Array.isArray(data) ? data : Object.values(data);
+            // Filtriamo eventuali elementi nulli
+            allMovies = allMovies.filter(m => m !== null);
         }
+        displayMovies(allMovies);
+    });
+}
 
         function saveMovies(movies) {
             db.ref('/').set(movies);
