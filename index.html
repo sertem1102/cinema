@@ -148,25 +148,20 @@
             measurementId: "G-6P2ZR9R741"
         };
 
-        // Inizializza Firebase (UNICA VOLTA)
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const auth = firebase.auth();
 
-        // Funzione per accedere
         window.loginAdmin = function() {
             const email = prompt("Inserisci la tua email:");
             const password = prompt("Inserisci la tua password:");
-
             if (email && password) {
                 auth.signInWithEmailAndPassword(email, password)
                     .then(() => {
-                        alert("Accesso effettuato! Ora puoi modificare il database.");
+                        alert("Accesso effettuato!");
                         location.reload();
                     })
-                    .catch((error) => {
-                        alert("Errore di accesso: " + error.message);
-                    });
+                    .catch((error) => alert("Errore: " + error.message));
             }
         };
 
@@ -178,43 +173,31 @@
         let editingMovieId = null;
         let allMovies = [];
 
-        const tmdbSearchInput = document.getElementById('tmdb-search');
-        const movieDetailsForm = document.getElementById('movie-details-form');
-        const movieListDiv = document.getElementById('movie-list');
-        const latestMoviesRow = document.getElementById('latest-movies-row');
-        const editModal = document.getElementById('edit-modal');
-
-       function loadMovies() {
-    // Puntiamo alla radice '/' perché i tuoi film sono lì (0, 1, 2...)
-    db.ref('/').on('value', (snapshot) => {
-        allMovies = [];
-        const data = snapshot.val();
-        if (data) {
-            // Trasformiamo l'oggetto o l'array in una lista pulita
-            allMovies = Array.isArray(data) ? data : Object.values(data);
-            // Filtriamo eventuali elementi nulli
-            allMovies = allMovies.filter(m => m !== null);
+        function loadMovies() {
+            db.ref('/').on('value', (snapshot) => {
+                allMovies = [];
+                const data = snapshot.val();
+                if (data) {
+                    allMovies = Array.isArray(data) ? data : Object.values(data);
+                    allMovies = allMovies.filter(m => m !== null);
+                }
+                displayMovies(allMovies);
+            });
         }
-        displayMovies(allMovies);
-    });
-}
 
         function saveMovies(movies) {
             db.ref('/').set(movies);
         }
 
         function createMovieCardHtml(movie, isLatestRow = false) {
-    // TRUCCO MIXDROP: Trasforma il link /f/ in /e/ (embed) per ridurre i popup
-    let cleanLink = movie.filmLink || '';
-    if (cleanLink.includes('mixdrop.co/f/')) {
-        cleanLink = cleanLink.replace('mixdrop.co/f/', 'mixdrop.co/e/');
-    }
+            let cleanLink = movie.filmLink || '';
+            if (cleanLink.includes('mixdrop.co/f/')) {
+                cleanLink = cleanLink.replace('mixdrop.co/f/', 'mixdrop.co/e/');
+            }
+            const playButtonHtml = (cleanLink && cleanLink.trim() !== '') 
+                ? `<a href="${cleanLink}" target="_blank" rel="noopener noreferrer">Guarda Film</a>` 
+                : `<span style="color:#e74c3c; font-weight:bold;">PROSSIMAMENTE</span>`;
 
-    const playButtonHtml = (cleanLink && cleanLink.trim() !== '') 
-        ? `<a href="${cleanLink}" target="_blank" rel="noopener noreferrer">Guarda Film</a>` 
-        : `<span style="color:#e74c3c; font-weight:bold;">PROSSIMAMENTE</span>`;
-    
-    // ... resto del codice della funzione ...
             const langClass = movie.audioLanguage === 'Sub ITA' ? 'lang-sub' : 'lang-ita';
             const langLabel = movie.audioLanguage === 'Sub ITA' ? 'SUB ITA' : 'ITA';
             const langBadge = `<span class="lang-badge ${langClass}">${langLabel}</span>`;
@@ -233,51 +216,28 @@
                         <button class="edit-btn" data-id="${movie.id}">Modifica</button>
                         <button class="delete-btn" data-id="${movie.id}">Elimina</button>
                     </div>
-                </div>
-            `;
+                </div>`;
         }
 
-     function displayMovies(movies) {
-    // AGGIUNGI QUESTE RIGHE QUI SOTTO:
-    // Trasforma i link Mixdrop in modalità embed per bloccare i popup su Android
-    movies.forEach(m => {
-        if (m.filmLink && m.filmLink.includes('mixdrop.co/f/')) {
-            m.filmLink = m.filmLink.replace('mixdrop.co/f/', 'mixdrop.co/e/');
-        }
-    });
+        function displayMovies(movies) {
+            // Pulizia link Mixdrop
+            movies.forEach(m => {
+                if (m.filmLink && m.filmLink.includes('mixdrop.co/f/')) {
+                    m.filmLink = m.filmLink.replace('mixdrop.co/f/', 'mixdrop.co/e/');
+                }
+            });
 
-    // Da qui continua il tuo codice originale
-    latestMoviesRow.innerHTML = '';
-    const latest = [...movies].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).slice(0, 4);
-    latest.forEach(m => {
-        const card = document.createElement('div');
-        card.classList.add('movie-card');
-        card.innerHTML = createMovieCardHtml(m, true);
-        latestMoviesRow.appendChild(card);
-    });
-
-    movieListDiv.innerHTML = '';
-    let filtered = [...movies];
-    const sort = document.getElementById('sort-order').value;
-    
-    if(sort === 'titleAsc') filtered.sort((a,b) => a.title.localeCompare(b.title));
-    if(sort === 'recent') filtered.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
-    if(sort === 'comingSoon') filtered = filtered.filter(m => !m.filmLink);
-
-    if(filtered.length === 0) {
-        movieListDiv.innerHTML = '<p class="no-results">Nessun film trovato.</p>';
-    }
-
-    filtered.forEach(m => {
-        const card = document.createElement('div');
-        card.classList.add('movie-card');
-        card.innerHTML = createMovieCardHtml(m, false);
-        movieListDiv.appendChild(card);
-    });
-
-    document.querySelectorAll('.delete-btn').forEach(b => b.onclick = () => deleteMovie(b.dataset.id));
-    document.querySelectorAll('.edit-btn').forEach(b => b.onclick = () => openEditModal(b.dataset.id));
-}
+            const latestMoviesRow = document.getElementById('latest-movies-row');
+            const movieListDiv = document.getElementById('movie-list');
+            
+            latestMoviesRow.innerHTML = '';
+            const latest = [...movies].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).slice(0, 4);
+            latest.forEach(m => {
+                const card = document.createElement('div');
+                card.classList.add('movie-card');
+                card.innerHTML = createMovieCardHtml(m, true);
+                latestMoviesRow.appendChild(card);
+            });
 
             movieListDiv.innerHTML = '';
             let filtered = [...movies];
@@ -303,12 +263,11 @@
         }
 
         async function searchMovies() {
-            const query = tmdbSearchInput.value.trim();
+            const query = document.getElementById('tmdb-search').value.trim();
             if(!query) return;
             document.getElementById('search-status').textContent = 'Ricerca...';
             const res = await fetch(`${TMDB_BASE_URL}/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}&language=it-IT`);
             const data = await res.json();
-            
             const resultsList = document.getElementById('search-results-list');
             resultsList.innerHTML = '';
             data.results.forEach(movie => {
@@ -319,8 +278,7 @@
                     <div class="movie-info">
                         <h3>${movie.title}</h3>
                         <button onclick="selectMovie(${movie.id})">Seleziona</button>
-                    </div>
-                `;
+                    </div>`;
                 resultsList.appendChild(div);
             });
             document.getElementById('search-results-container').style.display = 'block';
@@ -331,7 +289,6 @@
             const res = await fetch(`${TMDB_BASE_URL}/movie/${id}?api_key=${API_KEY}&language=it-IT&append_to_response=credits`);
             const movie = await res.json();
             const director = movie.credits.crew.find(c => c.job === 'Director')?.name || 'N/A';
-            
             currentMovieData = {
                 id: String(movie.id),
                 title: movie.title,
@@ -342,12 +299,11 @@
                 runtime: movie.runtime,
                 timestamp: Date.now()
             };
-
             document.getElementById('movie-title-display').textContent = movie.title;
             document.getElementById('movie-poster-display').src = IMAGE_BASE_URL + movie.poster_path;
             document.getElementById('movie-year-display').textContent = movie.release_date?.substring(0,4);
             document.getElementById('movie-runtime-display').textContent = movie.runtime;
-            movieDetailsForm.style.display = 'block';
+            document.getElementById('movie-details-form').style.display = 'block';
             document.getElementById('search-results-container').style.display = 'none';
         }
 
@@ -367,22 +323,20 @@
             document.getElementById('edit-credits-link').value = movie.creditsLink || '';
             if(movie.audioLanguage === 'Sub ITA') document.getElementById('edit-audio-sub').checked = true;
             else document.getElementById('edit-audio-ita').checked = true;
-            editModal.style.display = 'flex';
+            document.getElementById('edit-modal').style.display = 'flex';
         }
 
         document.getElementById('search-movie-btn').onclick = searchMovies;
-
         document.getElementById('add-movie-btn').onclick = () => {
             currentMovieData.filmLink = document.getElementById('film-link').value;
             currentMovieData.trailerLink = document.getElementById('trailer-link').value;
             currentMovieData.subtitleLink = document.getElementById('subtitle-link').value;
             currentMovieData.creditsLink = document.getElementById('credits-link').value;
             currentMovieData.audioLanguage = document.querySelector('input[name="audio-lang"]:checked').value;
-            
             allMovies.push(currentMovieData);
             saveMovies(allMovies);
-            movieDetailsForm.style.display = 'none';
-            tmdbSearchInput.value = '';
+            document.getElementById('movie-details-form').style.display = 'none';
+            document.getElementById('tmdb-search').value = '';
             alert("Film aggiunto!");
         };
 
@@ -393,13 +347,12 @@
             allMovies[idx].subtitleLink = document.getElementById('edit-subtitle-link').value;
             allMovies[idx].creditsLink = document.getElementById('edit-credits-link').value;
             allMovies[idx].audioLanguage = document.querySelector('input[name="edit-audio-lang"]:checked').value;
-            
             saveMovies(allMovies);
-            editModal.style.display = 'none';
+            document.getElementById('edit-modal').style.display = 'none';
         };
 
-        document.querySelector('.close-button').onclick = () => editModal.style.display = 'none';
-        window.onclick = (e) => { if(e.target == editModal) editModal.style.display = 'none'; };
+        document.querySelector('.close-button').onclick = () => document.getElementById('edit-modal').style.display = 'none';
+        window.onclick = (e) => { if(e.target == document.getElementById('edit-modal')) document.getElementById('edit-modal').style.display = 'none'; };
         document.getElementById('sort-order').onchange = () => displayMovies(allMovies);
 
         window.importaSuFirebase = (event) => {
@@ -408,16 +361,13 @@
                 try {
                     const movies = JSON.parse(e.target.result);
                     if (Array.isArray(movies)) {
-                        db.ref('/').set(movies)
-                        .then(() => alert("Importazione completata!"))
-                        .catch(err => alert("Errore: " + err));
+                        db.ref('/').set(movies).then(() => alert("Importazione completata!"));
                     }
                 } catch (err) { alert("Errore nel file JSON."); }
             };
             reader.readAsText(event.target.files[0]);
         };
 
-        // AVVIO
         loadMovies();
     </script>
 </body>
