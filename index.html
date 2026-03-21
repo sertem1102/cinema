@@ -186,17 +186,19 @@
         }
 
       function saveMovies(movies) {
-    db.ref('/').set(movies).then(() => {
-        console.log("Dati salvati con successo!");
-    }).catch((error) => {
-        if (error.code === 'PERMISSION_DENIED') {
-            alert("⚠️ ACCESSO NEGATO: Solo Sergio può modificare il database. Effettua il login!");
-        } else {
-            alert("Errore: " + error.message);
-        }
-        // Ricarica i dati originali dal database per annullare la modifica locale "finta"
-        loadMovies();
-    });
+    db.ref('/').set(movies)
+        .then(() => {
+            console.log("Sincronizzazione cloud completata.");
+        })
+        .catch((error) => {
+            if (error.code === 'PERMISSION_DENIED') {
+                alert("⚠️ AZIONE BLOCCATA: Non hai i permessi di scrittura. Accedi come Sergio!");
+                // Ricarica i dati per annullare la modifica "finta" sul tuo schermo
+                loadMovies(); 
+            } else {
+                alert("Errore critico: " + error.message);
+            }
+        });
 }
 
         function createMovieCardHtml(movie, isLatestRow = false) {
