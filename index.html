@@ -185,9 +185,19 @@
             });
         }
 
-        function saveMovies(movies) {
-            db.ref('/').set(movies);
+      function saveMovies(movies) {
+    db.ref('/').set(movies).then(() => {
+        console.log("Dati salvati con successo!");
+    }).catch((error) => {
+        if (error.code === 'PERMISSION_DENIED') {
+            alert("⚠️ ACCESSO NEGATO: Solo Sergio può modificare il database. Effettua il login!");
+        } else {
+            alert("Errore: " + error.message);
         }
+        // Ricarica i dati originali dal database per annullare la modifica locale "finta"
+        loadMovies();
+    });
+}
 
         function createMovieCardHtml(movie, isLatestRow = false) {
             let cleanLink = movie.filmLink || '';
