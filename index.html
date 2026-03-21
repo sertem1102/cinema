@@ -232,24 +232,33 @@
         }
 
         function displayMovies(movies) {
-            // Pulizia link Mixdrop
-            movies.forEach(m => {
-                if (m.filmLink && m.filmLink.includes('mixdrop.co/f/')) {
-                    m.filmLink = m.filmLink.replace('mixdrop.co/f/', 'mixdrop.co/e/');
-                }
-            });
+    const isAdmin = firebase.auth().currentUser !== null; // Controlla se sei loggato
 
-            const latestMoviesRow = document.getElementById('latest-movies-row');
-            const movieListDiv = document.getElementById('movie-list');
-            
-            latestMoviesRow.innerHTML = '';
-            const latest = [...movies].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).slice(0, 4);
-            latest.forEach(m => {
-                const card = document.createElement('div');
-                card.classList.add('movie-card');
-                card.innerHTML = createMovieCardHtml(m, true);
-                latestMoviesRow.appendChild(card);
-            });
+    // ... (parte dei link Mixdrop rimane uguale)
+
+    filtered.forEach(m => {
+        const card = document.createElement('div');
+        card.classList.add('movie-card');
+        
+        // Creiamo il contenuto della card
+        let html = createMovieCardHtml(m, false);
+        
+        // Se NON sei admin, rimuoviamo i tasti Modifica ed Elimina dal codice
+        if (!isAdmin) {
+            html = html.replace(/<button class="edit-btn".*?<\/button>/g, '');
+            html = html.replace(/<button class="delete-btn".*?<\/button>/g, '');
+        }
+        
+        card.innerHTML = html;
+        movieListDiv.appendChild(card);
+    });
+    
+    // Attiva i click solo se i tasti esistono (quindi se sei Admin)
+    if (isAdmin) {
+        document.querySelectorAll('.delete-btn').forEach(b => b.onclick = () => deleteMovie(b.dataset.id));
+        document.querySelectorAll('.edit-btn').forEach(b => b.onclick = () => openEditModal(b.dataset.id));
+    }
+}
 
             movieListDiv.innerHTML = '';
             let filtered = [...movies];
