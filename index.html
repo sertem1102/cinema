@@ -272,27 +272,51 @@
         }
 
         async function searchMovies() {
-            const query = document.getElementById('tmdb-search').value.trim();
-            if(!query) return;
-            document.getElementById('search-status').textContent = 'Ricerca...';
-            const res = await fetch(`${TMDB_BASE_URL}/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}&language=it-IT`);
-            const data = await res.json();
-            const resultsList = document.getElementById('search-results-list');
-            resultsList.innerHTML = '';
+    const query = document.getElementById('tmdb-search').value.trim();
+    if(!query) return;
+    document.getElementById('search-status').textContent = 'Ricerca in corso...';
+    
+    let url;
+    // Se la query è un numero, cerchiamo direttamente per ID
+    if (!isNaN(query)) {
+        url = `${TMDB_BASE_URL}/movie/${query}?api_key=${API_KEY}&language=it-IT`;
+    } else {
+        // Altrimenti facciamo la classica ricerca per titolo
+        url = `${TMDB_BASE_URL}/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}&language=it-IT`;
+    }
+
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const resultsList = document.getElementById('search-results-list');
+        resultsList.innerHTML = '';
+
+        // Se abbiamo cercato per ID, TMDB restituisce un singolo oggetto, non una lista
+        if (!isNaN(query) && data.id) {
+            selectMovie(data.id); // Seleziona automaticamente il film trovato per ID
+            document.getElementById('search-status').textContent = 'Film trovato tramite ID!';
+        } else if (data.results && data.results.length > 0) {
+            // Se abbiamo cercato per titolo, mostriamo la lista come al solito
             data.results.forEach(movie => {
                 const div = document.createElement('div');
                 div.className = 'movie-card';
                 div.innerHTML = `
-                    <img src="${IMAGE_BASE_URL}${movie.poster_path}">
+                    <img src="${IMAGE_BASE_URL}${movie.poster_path}" onerror="this.src='https://placehold.co/200x300?text=No+Poster';">
                     <div class="movie-info">
-                        <h3>${movie.title}</h3>
-                        <button onclick="selectMovie(${movie.id})">Seleziona</button>
+                        <h3>${movie.title} (${movie.release_date ? movie.release_date.substring(0,4) : 'N/A'})</h3>
+                        <button onclick="selectMovie(${movie.id})">Seleziona questo</button>
                     </div>`;
                 resultsList.appendChild(div);
             });
             document.getElementById('search-results-container').style.display = 'block';
             document.getElementById('search-status').textContent = '';
+        } else {
+            document.getElementById('search-status').textContent = 'Nessun film trovato.';
         }
+    } catch (err) {
+        document.getElementById('search-status').textContent = 'Errore nella ricerca.';
+    }
+}
 
         async function selectMovie(id) {
             const res = await fetch(`${TMDB_BASE_URL}/movie/${id}?api_key=${API_KEY}&language=it-IT&append_to_response=credits`);
