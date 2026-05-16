@@ -38,6 +38,25 @@
         .input-group { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
         .input-group input { flex-grow: 1; margin-bottom: 0; }
         .copy-btn { font-size: 0.9em; padding: 12px 15px; background-color: #2980b9; flex-shrink: 0; }
+        /* PLAYER IFRAME */
+#player-container {
+    display: none;
+    width: 90%;
+    max-width: 1200px;
+    margin-bottom: 40px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    background: #000;
+    aspect-ratio: 16/9;
+}
+
+#player-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    min-height: 480px;
+}
 
         /* ===== PALINSESTO CSS ===== */
         #palinsesto-section {
@@ -208,6 +227,15 @@
 
     <!-- SEZIONE PALINSESTO -->
     <!-- BANNER FILM IN ONDA -->
+    <!-- PLAYER IFRAME -->
+<div id="player-container">
+    <iframe id="player-iframe" 
+        src="" 
+        allowfullscreen 
+        scrolling="no" 
+        frameborder="0">
+    </iframe>
+</div>
 <div id="player-banner">
     <h3>🔴 Ora in Onda</h3>
     <span id="player-banner-titolo"></span>
@@ -821,10 +849,14 @@
 
                 const banner = document.getElementById('player-banner');
 
-                if (filmInOnda && filmInOnda.filmLink) {
+                                if (filmInOnda && filmInOnda.filmLink) {
                     let link = filmInOnda.filmLink;
+                    // Converti link Mixdrop /f/ in /e/ per embed
                     if (link.includes('mixdrop.co/f/')) {
                         link = link.replace('mixdrop.co/f/', 'mixdrop.co/e/');
+                    }
+                    if (link.includes('mixdrop.top/f/')) {
+                        link = link.replace('mixdrop.top/f/', 'mixdrop.top/e/');
                     }
 
                     document.getElementById('player-banner-titolo').textContent =
@@ -832,6 +864,16 @@
                     document.getElementById('player-banner-orario').textContent =
                         `Iniziato alle ore ${filmInOnda.orario}`;
                     document.getElementById('player-banner-btn').href = link;
+
+                    // Carica il film nell'iframe
+                    const playerContainer = document.getElementById('player-container');
+                    const playerIframe = document.getElementById('player-iframe');
+                    
+                    // Aggiorna iframe solo se il film è cambiato
+                    if (playerIframe.src !== link) {
+                        playerIframe.src = link;
+                        playerContainer.style.display = 'block';
+                    }
 
                     if (prossimoFilm) {
                         document.getElementById('player-banner-prossimo').textContent =
@@ -842,13 +884,11 @@
 
                     banner.style.display = 'block';
                 } else {
+                    // Nascondi tutto se nessun film in onda
                     banner.style.display = 'none';
+                    document.getElementById('player-container').style.display = 'none';
+                    document.getElementById('player-iframe').src = '';
                 }
-
-            } catch (err) {
-                console.log('Errore banner player:', err);
-            }
-        }
 
         // ===== AVVIO =====
         aggiornaBanner();
