@@ -885,11 +885,21 @@
                     banner.style.display = 'block';
                 } else {
                     // Nascondi tutto se nessun film in onda
-                    banner.style.display = 'none';
+                                       banner.style.display = 'none';
                     document.getElementById('player-container').style.display = 'none';
                     document.getElementById('player-iframe').src = '';
                 }
 
+            } catch (err) {
+                console.log('Errore banner player:', err);
+            }
+        }
+
+        // ===== AVVIO =====
+        aggiornaBanner();
+        aggiornaBannerPlayer();
+        setInterval(aggiornaBanner, 60000);
+        setInterval(aggiornaBannerPlayer, 60000);
         // ===== AVVIO =====
         aggiornaBanner();
         aggiornaBannerPlayer();
