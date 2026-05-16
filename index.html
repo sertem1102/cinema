@@ -663,25 +663,23 @@
             });
         }
 
-        function popolaSelectFilm() {
+                function popolaSelectFilm() {
             firebase.database().ref('/').once('value', snapshot => {
                 const select = document.getElementById('film-select');
                 select.innerHTML = '<option value="">-- Scegli un film --</option>';
                 const data = snapshot.val();
                 if (!data) return;
 
-                // Gestisce sia array che oggetto, esclude il nodo palinsesto
                 const raw = Array.isArray(data) ? data : Object.values(data);
                 const films = raw.filter(m => m !== null && m.title);
-
-                // Ordina alfabeticamente
                 films.sort((a, b) => a.title.localeCompare(b.title));
 
                 films.forEach(film => {
                     const opt = document.createElement('option');
                     opt.value = JSON.stringify({
                         titolo: film.title,
-                        tmdbId: film.id || null
+                        tmdbId: film.id || null,
+                        filmLink: film.filmLink || null  // <-- aggiunto!
                     });
                     opt.textContent = film.title;
                     select.appendChild(opt);
@@ -735,12 +733,13 @@
             caricaPalinsesto();
         };
 
-        async function aggiornaBanner() {
+                async function aggiornaBanner() {
             const oggi = new Date();
             const chiave = getChiaveGiorno(oggi);
 
             try {
-                const snapshot = await firebase.database().ref(`palinsesto/${chiave}`).once('value');
+                const snapshot = await firebase.database()
+                    .ref(`palinsesto/${chiave}`).once('value');
                 if (!snapshot.exists()) {
                     document.getElementById('ora-in-onda-banner').style.display = 'none';
                     return;
@@ -784,11 +783,79 @@
             }
         }
 
-                // Avvia banner e aggiornamento automatico ogni minuto
+        // ===== BANNER CLICCABILE =====
+        async function aggiornaBannerPlayer() {
+            const oggi = new Date();
+            const chiave = getChiaveGiorno(oggi);
+
+            try {
+                const snapshot = await firebase.database()
+                    .ref(`palinsesto/${chiave}`).once('value');
+
+                if (!snapshot.exists()) {
+                    document.getElementById('player-banner').style.display = 'none';
+                    return;
+                }
+
+                const voci = [];
+                snapshot.forEach(child => voci.push(child.val()));
+                voci.sort((a, b) => a.orario.localeCompare(b.orario));
+
+                const minutiAdesso = oggi.getHours() * 60 + oggi.getMinutes();
+                let filmInOnda = null;
+                let prossimoFilm = null;
+
+                for (let i = 0; i < voci.length; i++) {
+                    const [h, m] = voci[i].orario.split(':').map(Number);
+                    const inizioMin = h * 60 + m;
+                    const fineMin = inizioMin + (voci[i].durata || 90);
+
+                    if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
+                        filmInOnda = voci[i];
+                        if (i + 1 < voci.length) {
+                            prossimoFilm = voci[i + 1];
+                        }
+                        break;
+                    }
+                }
+
+                const banner = document.getElementById('player-banner');
+
+                if (filmInOnda && filmInOnda.filmLink) {
+                    let link = filmInOnda.filmLink;
+                    if (link.includes('mixdrop.co/f/')) {
+                        link = link.replace('mixdrop.co/f/', 'mixdrop.co/e/');
+                    }
+
+                    document.getElementById('player-banner-titolo').textContent =
+                        filmInOnda.titolo;
+                    document.getElementById('player-banner-orario').textContent =
+                        `Iniziato alle ore ${filmInOnda.orario}`;
+                    document.getElementById('player-banner-btn').href = link;
+
+                    if (prossimoFilm) {
+                        document.getElementById('player-banner-prossimo').textContent =
+                            `⏭️ Prossimamente ore ${prossimoFilm.orario}: ${prossimoFilm.titolo}`;
+                    } else {
+                        document.getElementById('player-banner-prossimo').textContent = '';
+                    }
+
+                    banner.style.display = 'block';
+                } else {
+                    banner.style.display = 'none';
+                }
+
+            } catch (err) {
+                console.log('Errore banner player:', err);
+            }
+        }
+
+        // ===== AVVIO =====
         aggiornaBanner();
         aggiornaBannerPlayer();
         setInterval(aggiornaBanner, 60000);
         setInterval(aggiornaBannerPlayer, 60000);
+
     </script>
 </body>
 </html>
