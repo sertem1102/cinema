@@ -859,11 +859,15 @@
                         link = link.replace('mixdrop.top/f/', 'mixdrop.top/e/');
                     }
 
-                    document.getElementById('player-banner-titolo').textContent =
-                        filmInOnda.titolo;
+                                        // Calcola orario di fine film
+                    const [hFine, mFine] = [
+                        Math.floor(filmInOnda.fineMin / 60) % 24,
+                        filmInOnda.fineMin % 60
+                    ];
+                    const orarioFine = `${String(hFine).padStart(2,'0')}:${String(mFine).padStart(2,'0')}`;
+
                     document.getElementById('player-banner-orario').textContent =
-                        `Iniziato alle ore ${filmInOnda.orario}`;
-                    document.getElementById('player-banner-btn').href = link;
+                        `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFine}`;
 
                     // Carica il film nell'iframe
                     const playerContainer = document.getElementById('player-container');
