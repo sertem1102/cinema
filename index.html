@@ -690,38 +690,38 @@
         }
 
         async function aggiungiAlPalinsesto() {
-            const orario = document.getElementById('orario-input').value;
-            const filmJson = document.getElementById('film-select').value;
+    const orario = document.getElementById('orario-input').value;
+    const filmJson = document.getElementById('film-select').value;
 
-            if (!orario || !filmJson) {
-                alert('Seleziona un orario e un film!');
-                return;
-            }
+    if (!orario || !filmJson) {
+        alert('Seleziona un orario e un film!');
+        return;
+    }
 
-            const film = JSON.parse(filmJson);
-            const data = getDataGiorno(giornoVisualizzato);
-            const chiave = getChiaveGiorno(data);
+    const film = JSON.parse(filmJson);
+    const data = getDataGiorno(giornoVisualizzato);
+    const chiave = getChiaveGiorno(data);
 
-            // Recupera durata da TMDB
-            let durata = 90;
-            if (film.tmdbId) {
-                durata = await getDurataFilm(film.tmdbId);
-            }
+    // Recupera durata da TMDB
+    let durata = 90;
+    if (film.tmdbId) {
+        durata = await getDurataFilm(film.tmdbId);
+    }
 
-            await firebase.database().ref(`palinsesto/${chiave}`).push({
-                orario: orario,
-                titolo: film.titolo,
-                tmdbId: film.tmdbId || null,
-                durata: durata
-            });
+    await firebase.database().ref(`palinsesto/${chiave}`).push({
+        orario: orario,
+        titolo: film.titolo,
+        tmdbId: film.tmdbId || null,
+        durata: durata,
+        filmLink: film.filmLink || null  // <-- aggiunto il link!
+    });
 
-            // Resetta il form
-            document.getElementById('orario-input').value = '';
-            document.getElementById('film-select').value = '';
+    // Resetta il form
+    document.getElementById('orario-input').value = '';
+    document.getElementById('film-select').value = '';
 
-            caricaPalinsesto();
-        }
-
+    caricaPalinsesto();
+}
         window.rimuoviDalPalinsesto = function(chiave, id) {
             if (confirm('Rimuovere questo film dal palinsesto?')) {
                 firebase.database().ref(`palinsesto/${chiave}/${id}`).remove()
