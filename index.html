@@ -849,7 +849,7 @@
 
                 const banner = document.getElementById('player-banner');
 
-                                if (filmInOnda && filmInOnda.filmLink) {
+                                                if (filmInOnda && filmInOnda.filmLink) {
                     let link = filmInOnda.filmLink;
                     // Converti link Mixdrop /f/ in /e/ per embed
                     if (link.includes('mixdrop.co/f/')) {
@@ -859,13 +859,15 @@
                         link = link.replace('mixdrop.top/f/', 'mixdrop.top/e/');
                     }
 
-                                        // Calcola orario di fine film
-                    const [hFine, mFine] = [
-                        Math.floor(filmInOnda.fineMin / 60) % 24,
-                        filmInOnda.fineMin % 60
-                    ];
+                    // Calcola orario di fine film
+                    const [hInizio, mInizio] = filmInOnda.orario.split(':').map(Number);
+                    const inizioMin = hInizio * 60 + mInizio;
+                    const fineMin = inizioMin + (filmInOnda.durata || 90);
+                    const hFine = Math.floor(fineMin / 60) % 24;
+                    const mFine = fineMin % 60;
                     const orarioFine = `${String(hFine).padStart(2,'0')}:${String(mFine).padStart(2,'0')}`;
 
+                    document.getElementById('player-banner-titolo').textContent = filmInOnda.titolo;
                     document.getElementById('player-banner-orario').textContent =
                         `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFine}`;
 
