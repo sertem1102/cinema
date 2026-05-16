@@ -83,6 +83,66 @@
         #palinsesto-form h3 { width: 100%; margin: 0 0 10px 0; color: #e0e0e0; }
         #orario-input { padding: 10px; border-radius: 5px; border: 1px solid #2e4a81; background-color: #0a1f3c; color: #e0e0e0; font-size: 1em; }
         #film-select { flex-grow: 1; margin-bottom: 0; padding: 10px; }
+        /* BANNER FILM IN ONDA */
+#player-banner {
+    display: none;
+    width: 100%;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border: 2px solid #e94560;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+#player-banner h3 {
+    color: #e94560;
+    margin: 0 0 5px 0;
+    font-size: 1em;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+#player-banner-titolo {
+    color: white;
+    font-size: 1.6em;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+}
+
+#player-banner-orario {
+    color: #aaa;
+    font-size: 0.9em;
+    display: block;
+    margin-bottom: 15px;
+}
+
+#player-banner-btn {
+    display: inline-block;
+    background-color: #e94560;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 5px;
+    font-size: 1.1em;
+    font-weight: bold;
+    text-decoration: none;
+    transition: background-color 0.3s;
+    border: none;
+    cursor: pointer;
+}
+
+#player-banner-btn:hover {
+    background-color: #c03952;
+}
+
+#player-banner-prossimo {
+    color: #aaa;
+    font-size: 0.85em;
+    display: block;
+    margin-top: 12px;
+}
     </style>
 </head>
 <body>
@@ -147,6 +207,16 @@
     </div>
 
     <!-- SEZIONE PALINSESTO -->
+    <!-- BANNER FILM IN ONDA -->
+<div id="player-banner">
+    <h3>🔴 Ora in Onda</h3>
+    <span id="player-banner-titolo"></span>
+    <span id="player-banner-orario"></span>
+    <a id="player-banner-btn" href="#" target="_blank" rel="noopener noreferrer">
+        ▶ Guarda Ora
+    </a>
+    <span id="player-banner-prossimo"></span>
+</div>
     <div id="palinsesto-section">
         <h2>📺 Palinsesto Cinema</h2>
 
@@ -714,10 +784,11 @@
             }
         }
 
-        // Avvia banner e aggiornamento automatico ogni minuto
+                // Avvia banner e aggiornamento automatico ogni minuto
         aggiornaBanner();
+        aggiornaBannerPlayer();
         setInterval(aggiornaBanner, 60000);
-
+        setInterval(aggiornaBannerPlayer, 60000);
     </script>
 </body>
 </html>
