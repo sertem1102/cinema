@@ -880,7 +880,15 @@
                         playerIframe.src = link;
                         playerContainer.style.display = 'block';
                     }
+                    const [hI, mI] = filmInOnda.orario.split(':').map(Number);
+                    const inizioMinBanner = hI * 60 + mI;
+                    const fineMinBanner = inizioMinBanner + (filmInOnda.durata || 90);
+                    const hFB = Math.floor(fineMinBanner / 60) % 24;
+                    const mFB = fineMinBanner % 60;
+                    const orarioFineBanner = `${String(hFB).padStart(2,'0')}:${String(mFB).padStart(2,'0')}`;
 
+document.getElementById('ora-in-onda-orario').textContent =
+    `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFineBanner}`;
                     if (prossimoFilm) {
                         document.getElementById('player-banner-prossimo').textContent =
                             `⏭️ Prossimamente ore ${prossimoFilm.orario}: ${prossimoFilm.titolo}`;
