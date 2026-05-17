@@ -129,9 +129,6 @@
             <p class="no-results">Connessione al database in corso...</p>
         </div>
     </div>
-        <div id="player-container">
-        <iframe id="player-iframe" src="" allowfullscreen scrolling="no" frameborder="0"></iframe>
-    </div>
 
     <div id="player-banner">
         <h3>🔴 Ora in Onda</h3>
@@ -141,83 +138,8 @@
         <span id="player-banner-prossimo"></span>
     </div>
 
-    <div id="palinsesto-section">
-        <h2>📺 Palinsesto Cinema</h2>
-
-        <div id="ora-in-onda-banner" style="display:none;">
-            <span id="ora-in-onda-label">🎬 ORA IN ONDA</span>
-            <span id="ora-in-onda-titolo"></span>
-            <span id="ora-in-onda-orario"></span>
-            <div id="barra-container">
-                <div id="barra-avanzamento"></div>
-                <span id="barra-percentuale"></span>
-            </div>
-        </div>
-
-        <div id="palinsesto-nav">
-            <button onclick="cambiaGiorno(-1)">◀ Giorno precedente</button>
-            <span id="giorno-corrente-label"></span>
-            <button onclick="cambiaGiorno(1)">Giorno successivo ▶</button>
-        </div>
-
-        <div id="palinsesto-container">
-            <table id="palinsesto-table">
-                <thead>
-                    <tr>
-                        <th>Orario</th>
-                        <th>Film</th>
-                        <th>Durata</th>
-                        <th id="col-azioni" style="display:none;">Azioni</th>
-                    </tr>
-                </thead>
-                <tbody id="palinsesto-body"></tbody>
-            </table>
-        </div>
-
-        <div id="palinsesto-form" style="display:none;">
-            <h3>➕ Aggiungi al Palinsesto</h3>
-            <input type="time" id="orario-input" />
-            <select id="film-select">
-                <option value="">-- Scegli un film --</option>
-            </select>
-            <button onclick="aggiungiAlPalinsesto()">Aggiungi</button>
-        </div>
-    </div>
-
-    <div id="edit-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h3>Modifica Film</h3>
-            <label>Lingua Audio:</label>
-            <div class="radio-group">
-                <input type="radio" id="edit-audio-ita" name="edit-audio-lang" value="Italiano">
-                <label for="edit-audio-ita">Italiano 🇮🇹</label>
-                <input type="radio" id="edit-audio-sub" name="edit-audio-lang" value="Sub ITA">
-                <label for="edit-audio-sub">Sub ITA 💬</label>
-            </div>
-            <label for="edit-film-link">Link al Film:</label>
-            <div class="input-group">
-                <input type="text" id="edit-film-link">
-                <button class="copy-btn" data-target="edit-film-link">Copia</button>
-            </div>
-            <label for="edit-trailer-link">Link al Trailer:</label>
-            <div class="input-group">
-                <input type="text" id="edit-trailer-link">
-                <button class="copy-btn" data-target="edit-trailer-link">Copia</button>
-            </div>
-            <button id="save-edit-btn">Salva Modifiche Online</button>
-        </div>
-    </div>
-        <div id="player-container">
+    <div id="player-container">
         <iframe id="player-iframe" src="" allowfullscreen scrolling="no" frameborder="0"></iframe>
-    </div>
-
-    <div id="player-banner">
-        <h3>🔴 Ora in Onda</h3>
-        <span id="player-banner-titolo"></span>
-        <span id="player-banner-orario"></span>
-        <a id="player-banner-btn" href="#" target="_blank" rel="noopener noreferrer">▶ Guarda Ora</a>
-        <span id="player-banner-prossimo"></span>
     </div>
 
     <div id="palinsesto-section">
@@ -288,666 +210,561 @@
         </div>
     </div>
     <script>
+    // ============================================================
+    // CONFIGURAZIONE FIREBASE
+    // ============================================================
     const firebaseConfig = {
-        apiKey: "AIzaSyDg98bazXDqE1ESCZdzXeYhkXnsJZBpjvc",
-        authDomain: "cinema-database-b2723.firebaseapp.com",
-        databaseURL: "https://cinema-database-b2723-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "cinema-database-b2723",
-        storageBucket: "cinema-database-b2723.appspot.com",
-        messagingSenderId: "493534715462",
-        appId: "1:493534715462:web:41ada890b26bc8e8803447",
-        measurementId: "G-6P2ZR9R741"
+        apiKey: "LA_TUA_API_KEY",
+        authDomain: "IL_TUO_PROJECT.firebaseapp.com",
+        databaseURL: "https://IL_TUO_PROJECT-default-rtdb.firebaseio.com",
+        projectId: "IL_TUO_PROJECT",
+        storageBucket: "IL_TUO_PROJECT.appspot.com",
+        messagingSenderId: "IL_TUO_SENDER_ID",
+        appId: "IL_TUO_APP_ID"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const auth = firebase.auth();
 
-    const API_KEY = '4d5149e0894f071e682f4fc0401624a4';
-    const TMDB_API_KEY = '4d5149e0894f071e682f4fc0401624a4';
-    const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
-    const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
-    const ADMIN_UID = 'fvY3JO6X0ec9U9A7t5AzHRJwJp42';
+    // ============================================================
+    // CHIAVE TMDB
+    // ============================================================
+    const TMDB_API_KEY = "LA_TUA_TMDB_API_KEY";
+    const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+    const TMDB_IMG_BASE = "https://image.tmdb.org/t/p/w500";
 
-    let currentMovieData = null;
-    let editingMovieId = null;
-    let allMovies = [];
-    let giornoVisualizzato = 0;
+    // ============================================================
+    // VARIABILI GLOBALI
+    // ============================================================
     let isAdmin = false;
+    let allMovies = [];
+    let selectedMovieData = null;
+    let editingMovieKey = null;
 
-    // ===== AUTH =====
-    auth.onAuthStateChanged((user) => {
-        const adminPanel = document.getElementById('admin-panel');
-        const loginBtn = document.getElementById('auth-status-btn');
-        const logoutBtn = document.getElementById('logout-btn');
-
-        if (user && user.uid === ADMIN_UID) {
+    // ============================================================
+    // AUTH
+    // ============================================================
+    auth.onAuthStateChanged(user => {
+        if (user) {
             isAdmin = true;
-            adminPanel.style.display = 'block';
-            loginBtn.style.display = 'none';
-            logoutBtn.style.display = 'inline-block';
+            document.getElementById("auth-status-btn").style.display = "none";
+            document.getElementById("logout-btn").style.display = "inline-block";
+            document.getElementById("admin-panel").style.display = "block";
+            document.getElementById("palinsesto-form").style.display = "flex";
+            document.getElementById("col-azioni").style.display = "";
+            renderMovies();
+            aggiornaSelectFilm();
         } else {
             isAdmin = false;
-            adminPanel.style.display = 'none';
-            loginBtn.style.display = 'inline-block';
-            logoutBtn.style.display = 'none';
+            document.getElementById("auth-status-btn").style.display = "inline-block";
+            document.getElementById("logout-btn").style.display = "none";
+            document.getElementById("admin-panel").style.display = "none";
+            document.getElementById("palinsesto-form").style.display = "none";
+            document.getElementById("col-azioni").style.display = "none";
+            renderMovies();
         }
-        loadMovies();
-        caricaPalinsesto();
-        popolaSelectFilm();
     });
 
-    window.loginAdmin = function () {
-        const email = prompt("Inserisci la tua email:");
-        const password = prompt("Inserisci la tua password:");
+    function loginAdmin() {
+        const email = prompt("Email admin:");
+        const password = prompt("Password:");
         if (email && password) {
             auth.signInWithEmailAndPassword(email, password)
-                .then(() => alert("Accesso effettuato!"))
-                .catch((error) => alert("Errore: " + error.message));
+                .catch(err => alert("Errore login: " + err.message));
         }
-    };
-
-    window.logoutAdmin = function () {
-        auth.signOut().then(() => alert("Uscita effettuata."));
-    };
-
-    // ===== FILM DATABASE =====
-    function loadMovies() {
-        db.ref('/').on('value', (snapshot) => {
-            allMovies = [];
-            const data = snapshot.val();
-            if (data) {
-                let raw = [];
-                if (Array.isArray(data)) {
-                    raw = data;
-                } else if (typeof data === 'object') {
-                    raw = Object.entries(data)
-                        .filter(([key]) => key !== 'palinsesto')
-                        .map(([, val]) => val);
-                }
-                allMovies = raw.filter(m => m !== null && m !== undefined && m.title);
-            }
-            displayMovies(allMovies);
-        });
     }
 
-    function saveMovies(movies) {
-        db.ref('/').set(movies).catch((error) => {
-            if (error.code === 'PERMISSION_DENIED') {
-                alert("Errore: Non hai i permessi di scrittura!");
-            }
-        });
+    function logoutAdmin() {
+        auth.signOut();
     }
 
-    function createMovieCardHtml(movie, isLatestRow = false) {
-        let cleanLink = movie.filmLink || '';
-        if (cleanLink.includes('mixdrop.co/f/')) {
-            cleanLink = cleanLink.replace('mixdrop.co/f/', 'mixdrop.co/e/');
-        }
-        const playButtonHtml = (cleanLink && cleanLink.trim() !== '')
-            ? `<a href="${cleanLink}" target="_blank" rel="noopener noreferrer">Guarda Film</a>`
-            : `<span style="color:#e74c3c; font-weight:bold;">PROSSIMAMENTE</span>`;
-
-        const langClass = movie.audioLanguage === 'Sub ITA' ? 'lang-sub' : 'lang-ita';
-        const langLabel = movie.audioLanguage === 'Sub ITA' ? 'SUB ITA' : 'ITA';
-
-        const adminButtons = isAdmin ?
-            `<button class="edit-btn" data-id="${movie.id}">Modifica</button>
-             <button class="delete-btn" data-id="${movie.id}">Elimina</button>` : '';
-
-        return `
-            <img src="${movie.posterUrl}"
-                 onerror="this.src='https://placehold.co/200x300?text=No+Poster';">
-            <div class="movie-info">
-                <div>
-                    <h3>${movie.title} (${movie.year})
-                        <span class="lang-badge ${langClass}">${langLabel}</span>
-                    </h3>
-                    <p><strong>Regia:</strong> ${movie.director}</p>
-                    <p style="font-size:0.9em; color:#bbb;">
-                        ${isLatestRow ? '' : (movie.overview ? movie.overview.substring(0, 100) + '...' : '')}
-                    </p>
-                </div>
-                <div class="movie-actions">
-                    ${playButtonHtml}
-                    ${movie.trailerLink ? `<a href="${movie.trailerLink}" target="_blank">Trailer</a>` : ''}
-                    ${adminButtons}
-                </div>
-            </div>`;
-    }
-
-    function displayMovies(movies) {
-        const latestMoviesRow = document.getElementById('latest-movies-row');
-        const movieListDiv = document.getElementById('movie-list');
-
-        latestMoviesRow.innerHTML = '';
-        const latest = [...movies]
-            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
-            .slice(0, 4);
-        latest.forEach(m => {
-            const card = document.createElement('div');
-            card.classList.add('movie-card');
-            card.innerHTML = createMovieCardHtml(m, true);
-            latestMoviesRow.appendChild(card);
-        });
-
-        movieListDiv.innerHTML = '';
-        let filtered = [...movies];
-        const sort = document.getElementById('sort-order').value;
-
-        if (sort === 'titleAsc')   filtered.sort((a, b) => a.title.localeCompare(b.title));
-        if (sort === 'recent')     filtered.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-        if (sort === 'comingSoon') filtered = filtered.filter(m => !m.filmLink);
-
-        if (filtered.length === 0) {
-            movieListDiv.innerHTML = '<p class="no-results">Nessun film trovato.</p>';
-        }
-
-        filtered.forEach(m => {
-            const card = document.createElement('div');
-            card.classList.add('movie-card');
-            card.innerHTML = createMovieCardHtml(m, false);
-            movieListDiv.appendChild(card);
-        });
-
-        document.querySelectorAll('.delete-btn').forEach(b => b.onclick = () => deleteMovie(b.dataset.id));
-        document.querySelectorAll('.edit-btn').forEach(b => b.onclick = () => openEditModal(b.dataset.id));
-    }
-
-    async function searchMovies() {
-        const query = document.getElementById('tmdb-search').value.trim();
+    // ============================================================
+    // RICERCA TMDB
+    // ============================================================
+    document.getElementById("search-movie-btn").addEventListener("click", async () => {
+        const query = document.getElementById("tmdb-search").value.trim();
         if (!query) return;
-        document.getElementById('search-status').textContent = 'Ricerca in corso...';
-
-        let url;
-        if (!isNaN(query)) {
-            url = `${TMDB_BASE_URL}/movie/${query}?api_key=${API_KEY}&language=it-IT`;
-        } else {
-            url = `${TMDB_BASE_URL}/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}&language=it-IT`;
-        }
+        const status = document.getElementById("search-status");
+        status.textContent = "Ricerca in corso...";
+        document.getElementById("search-results-container").style.display = "none";
+        document.getElementById("movie-details-form").style.display = "none";
 
         try {
-            const res = await fetch(url);
-            const data = await res.json();
-            const resultsList = document.getElementById('search-results-list');
-            resultsList.innerHTML = '';
-
-            if (!isNaN(query) && data.id) {
-                selectMovie(data.id);
-                document.getElementById('search-status').textContent = 'Film trovato tramite ID!';
-            } else if (data.results && data.results.length > 0) {
-                data.results.forEach(movie => {
-                    const div = document.createElement('div');
-                    div.className = 'movie-card';
-                    div.innerHTML = `
-                        <img src="${IMAGE_BASE_URL}${movie.poster_path}"
-                             onerror="this.src='https://placehold.co/200x300?text=No+Poster';">
-                        <div class="movie-info">
-                            <h3>${movie.title} (${movie.release_date ? movie.release_date.substring(0,4) : 'N/A'})</h3>
-                            <button onclick="selectMovie(${movie.id})">Seleziona questo</button>
-                        </div>`;
-                    resultsList.appendChild(div);
-                });
-                document.getElementById('search-results-container').style.display = 'block';
-                document.getElementById('search-status').textContent = '';
+            let results = [];
+            if (/^\d+$/.test(query)) {
+                const res = await fetch(`${TMDB_BASE_URL}/movie/${query}?api_key=${TMDB_API_KEY}&language=it-IT`);
+                const data = await res.json();
+                if (data.id) results = [data];
             } else {
-                document.getElementById('search-status').textContent = 'Nessun film trovato.';
+                const res = await fetch(`${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&language=it-IT&query=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                results = data.results || [];
             }
-        } catch (err) {
-            document.getElementById('search-status').textContent = 'Errore nella ricerca.';
-        }
-    }
 
-    async function selectMovie(id) {
-        const res = await fetch(
-            `${TMDB_BASE_URL}/movie/${id}?api_key=${API_KEY}&language=it-IT&append_to_response=credits`
-        );
-        const movie = await res.json();
-        const director = movie.credits.crew.find(c => c.job === 'Director')?.name || 'N/A';
-        currentMovieData = {
-            id: String(movie.id),
-            title: movie.title,
-            year: movie.release_date?.substring(0, 4),
-            director: director,
-            posterUrl: IMAGE_BASE_URL + movie.poster_path,
-            overview: movie.overview,
-            runtime: movie.runtime,
-            timestamp: Date.now()
-        };
-        document.getElementById('movie-title-display').textContent = movie.title;
-        document.getElementById('movie-poster-display').src = IMAGE_BASE_URL + movie.poster_path;
-        document.getElementById('movie-year-display').textContent = movie.release_date?.substring(0, 4);
-        document.getElementById('movie-runtime-display').textContent = movie.runtime;
-        document.getElementById('movie-details-form').style.display = 'block';
-        document.getElementById('search-results-container').style.display = 'none';
-    }
-
-    function deleteMovie(id) {
-        if (confirm('Eliminare il film?')) {
-            const updatedMovies = allMovies.filter(m => m.id !== id);
-            saveMovies(updatedMovies);
-        }
-    }
-
-    function openEditModal(id) {
-        const movie = allMovies.find(m => m.id === id);
-        editingMovieId = id;
-        document.getElementById('edit-film-link').value = movie.filmLink || '';
-        document.getElementById('edit-trailer-link').value = movie.trailerLink || '';
-        if (movie.audioLanguage === 'Sub ITA') document.getElementById('edit-audio-sub').checked = true;
-        else document.getElementById('edit-audio-ita').checked = true;
-        document.getElementById('edit-modal').style.display = 'flex';
-    }
-
-    document.getElementById('search-movie-btn').onclick = searchMovies;
-
-    document.getElementById('add-movie-btn').onclick = () => {
-        currentMovieData.filmLink = document.getElementById('film-link').value;
-        currentMovieData.trailerLink = document.getElementById('trailer-link').value;
-        currentMovieData.audioLanguage = document.querySelector('input[name="audio-lang"]:checked').value;
-        allMovies.push(currentMovieData);
-        saveMovies(allMovies);
-        document.getElementById('movie-details-form').style.display = 'none';
-        document.getElementById('tmdb-search').value = '';
-    };
-
-    document.getElementById('save-edit-btn').onclick = () => {
-        const idx = allMovies.findIndex(m => m.id === editingMovieId);
-        allMovies[idx].filmLink = document.getElementById('edit-film-link').value;
-        allMovies[idx].trailerLink = document.getElementById('edit-trailer-link').value;
-        allMovies[idx].audioLanguage = document.querySelector('input[name="edit-audio-lang"]:checked').value;
-        saveMovies(allMovies);
-        document.getElementById('edit-modal').style.display = 'none';
-    };
-
-    document.querySelector('.close-button').onclick = () => {
-        document.getElementById('edit-modal').style.display = 'none';
-    };
-
-    document.querySelectorAll('.copy-btn').forEach(btn => {
-        btn.onclick = () => {
-            const target = document.getElementById(btn.dataset.target);
-            navigator.clipboard.writeText(target.value);
-        };
-    });
-
-    document.getElementById('sort-order').onchange = () => displayMovies(allMovies);
-        // ===== PALINSESTO =====
-    function getGiovedìDiRiferimento() {
-        const oggi = new Date();
-        const giorno = oggi.getDay();
-        const diffGio = (giorno >= 4) ? (giorno - 4) : (giorno + 3);
-        const giovedi = new Date(oggi);
-        giovedi.setDate(oggi.getDate() - diffGio);
-        giovedi.setHours(0, 0, 0, 0);
-        return giovedi;
-    }
-
-    function getDataGiorno(offset) {
-        const base = getGiovedìDiRiferimento();
-        base.setDate(base.getDate() + offset);
-        return base;
-    }
-
-    function formatDataLabel(data) {
-        const giorni = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
-        const mesi = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
-        return `${giorni[data.getDay()]} ${data.getDate()} ${mesi[data.getMonth()]}`;
-    }
-
-    function getChiaveGiorno(data) {
-        return `${data.getFullYear()}-${String(data.getMonth()+1).padStart(2,'0')}-${String(data.getDate()).padStart(2,'0')}`;
-    }
-
-    async function getDurataFilm(tmdbId) {
-        try {
-            const res = await fetch(`${TMDB_BASE_URL}/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=it-IT`);
-            const data = await res.json();
-            return data.runtime || 90;
-        } catch {
-            return 90;
-        }
-    }
-
-    async function caricaPalinsesto() {
-        const data = getDataGiorno(giornoVisualizzato);
-        const chiave = getChiaveGiorno(data);
-        document.getElementById('giorno-corrente-label').textContent = formatDataLabel(data);
-        document.getElementById('col-azioni').style.display = isAdmin ? '' : 'none';
-        document.getElementById('palinsesto-form').style.display = isAdmin ? 'block' : 'none';
-
-        const ref = firebase.database().ref(`palinsesto/${chiave}`);
-        ref.once('value', snapshot => {
-            const tbody = document.getElementById('palinsesto-body');
-            tbody.innerHTML = '';
-
-            if (!snapshot.exists()) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#aaa;">
-                    Nessun film programmato per questo giorno.</td></tr>`;
+            if (results.length === 0) {
+                status.textContent = "Nessun film trovato.";
                 return;
             }
 
-            const voci = [];
-            snapshot.forEach(child => {
-                voci.push({ id: child.key, ...child.val() });
-            });
-            voci.sort((a, b) => a.orario.localeCompare(b.orario));
-
-            const ora = new Date();
-            const minutiAdesso = ora.getHours() * 60 + ora.getMinutes();
-
-            voci.forEach((voce, index) => {
-                const tr = document.createElement('tr');
-                const durataStr = voce.durata ? `${voce.durata} min` : '...';
-
-                const [h, m] = voce.orario.split(':').map(Number);
-                const inizioMin = h * 60 + m;
-                const fineMin = inizioMin + (voce.durata || 90);
-
-                const hFine = Math.floor(fineMin / 60) % 24;
-                const mFine = fineMin % 60;
-                const orarioFine = `${String(hFine).padStart(2,'0')}:${String(mFine).padStart(2,'0')}`;
-
-                const inOnda = minutiAdesso >= inizioMin && minutiAdesso < fineMin;
-
-                let sovrapposto = false;
-                if (index > 0) {
-                    const [hPrec, mPrec] = voci[index - 1].orario.split(':').map(Number);
-                    const inizioPrec = hPrec * 60 + mPrec;
-                    const finePrec = inizioPrec + (voci[index - 1].durata || 90);
-                    if (inizioMin < finePrec) sovrapposto = true;
-                }
-
-                if (inOnda) {
-                    tr.style.backgroundColor = '#1a3a2a';
-                    tr.style.borderLeft = '3px solid #e94560';
-                }
-                if (sovrapposto) {
-                    tr.classList.add('sovrapposizione');
-                }
-
-                tr.innerHTML = `
-                    <td>${inOnda ? '🔴 ' : ''}${sovrapposto ? '⚠️ ' : ''}${voce.orario} - ${orarioFine}</td>
-                    <td>${voce.titolo}</td>
-                    <td>${durataStr}</td>
-                    ${isAdmin ? `<td><button onclick="rimuoviDalPalinsesto('${chiave}','${voce.id}')"
-                        style="padding:5px 10px; font-size:0.8em;">🗑️ Rimuovi</button></td>` : ''}
-                `;
-                tbody.appendChild(tr);
-            });
-        });
-    }
-
-    function popolaSelectFilm() {
-        firebase.database().ref('/').once('value', snapshot => {
-            const select = document.getElementById('film-select');
-            select.innerHTML = '<option value="">-- Scegli un film --</option>';
-            const data = snapshot.val();
-            if (!data) return;
-
-            let raw = [];
-            if (Array.isArray(data)) {
-                raw = data;
-            } else if (typeof data === 'object') {
-                raw = Object.entries(data)
-                    .filter(([key]) => key !== 'palinsesto')
-                    .map(([, val]) => val);
-            }
-            const films = raw.filter(m => m !== null && m !== undefined && m.title);
-            films.sort((a, b) => a.title.localeCompare(b.title));
-
-            films.forEach(film => {
-                const opt = document.createElement('option');
-                opt.value = JSON.stringify({
-                    titolo: film.title,
-                    tmdbId: film.id || null,
-                    filmLink: film.filmLink || null
+            if (results.length === 1) {
+                await caricaDettagliFilm(results.id);
+                status.textContent = "";
+            } else {
+                status.textContent = `${results.length} risultati trovati. Scegli un film:`;
+                const container = document.getElementById("search-results-list");
+                container.innerHTML = "";
+                results.slice(0, 12).forEach(film => {
+                    const card = document.createElement("div");
+                    card.className = "movie-card";
+                    card.style.cursor = "pointer";
+                    card.innerHTML = `
+                        <img src="${film.poster_path ? TMDB_IMG_BASE + film.poster_path : 'https://via.placeholder.com/500x750?text=No+Image'}" alt="${film.title}">
+                        <div class="movie-info">
+                            <h3>${film.title}</h3>
+                            <p>${film.release_date ? film.release_date.substring(0,4) : 'N/D'}</p>
+                        </div>`;
+                    card.addEventListener("click", async () => {
+                        document.getElementById("search-results-container").style.display = "none";
+                        status.textContent = "Caricamento dettagli...";
+                        await caricaDettagliFilm(film.id);
+                        status.textContent = "";
+                    });
+                    container.appendChild(card);
                 });
-                opt.textContent = film.title;
-                select.appendChild(opt);
-            });
+                document.getElementById("search-results-container").style.display = "block";
+            }
+        } catch (e) {
+            status.textContent = "Errore nella ricerca: " + e.message;
+        }
+    });
+
+    async function caricaDettagliFilm(tmdbId) {
+        const res = await fetch(`${TMDB_BASE_URL}/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=it-IT`);
+        const data = await res.json();
+        selectedMovieData = data;
+        document.getElementById("movie-poster-display").src = data.poster_path ? TMDB_IMG_BASE + data.poster_path : "";
+        document.getElementById("movie-title-display").textContent = data.title;
+        document.getElementById("movie-year-display").textContent = data.release_date ? data.release_date.substring(0,4) : "N/D";
+        document.getElementById("movie-runtime-display").textContent = data.runtime || "N/D";
+        document.getElementById("movie-details-form").style.display = "block";
+    }
+
+    // ============================================================
+    // AGGIUNGI FILM
+    // ============================================================
+    document.getElementById("add-movie-btn").addEventListener("click", () => {
+        if (!selectedMovieData) return;
+        const audioLang = document.querySelector('input[name="audio-lang"]:checked').value;
+        const filmLink = document.getElementById("film-link").value.trim();
+        const trailerLink = document.getElementById("trailer-link").value.trim();
+
+        const nuovoFilm = {
+            titolo: selectedMovieData.title,
+            anno: selectedMovieData.release_date ? selectedMovieData.release_date.substring(0,4) : "N/D",
+            durata: selectedMovieData.runtime || 0,
+            trama: selectedMovieData.overview || "",
+            poster: selectedMovieData.poster_path ? TMDB_IMG_BASE + selectedMovieData.poster_path : "",
+            tmdbId: selectedMovieData.id,
+            audio: audioLang,
+            link: filmLink,
+            trailer: trailerLink,
+            timestamp: Date.now()
+        };
+
+        db.ref("films").push(nuovoFilm).then(() => {
+            alert(`"${nuovoFilm.titolo}" aggiunto con successo!`);
+            document.getElementById("movie-details-form").style.display = "none";
+            document.getElementById("tmdb-search").value = "";
+            document.getElementById("film-link").value = "";
+            document.getElementById("trailer-link").value = "";
+            selectedMovieData = null;
+        }).catch(err => alert("Errore salvataggio: " + err.message));
+    });
+
+    // ============================================================
+    // CARICA E RENDER FILM
+    // ============================================================
+    db.ref("films").on("value", snapshot => {
+        allMovies = [];
+        snapshot.forEach(child => {
+            allMovies.push({ key: child.key, ...child.val() });
+        });
+        renderMovies();
+        aggiornaSelectFilm();
+    });
+
+    function renderMovies() {
+        const sortOrder = document.getElementById("sort-order").value;
+        let filtered = [...allMovies];
+
+        if (sortOrder === "comingSoon") {
+            filtered = filtered.filter(m => m.comingSoon);
+        } else if (sortOrder === "titleAsc") {
+            filtered.sort((a, b) => a.titolo.localeCompare(b.titolo));
+        } else {
+            filtered.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        }
+
+        // Ultimi 4 aggiunti
+        const latest = [...allMovies]
+            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+            .slice(0, 4);
+        const latestRow = document.getElementById("latest-movies-row");
+        latestRow.innerHTML = "<h3 style='width:100%;color:#e94560;margin-bottom:10px;'>🆕 Ultimi Aggiunti</h3>";
+        latest.forEach(film => latestRow.appendChild(creaCardFilm(film)));
+
+        const movieList = document.getElementById("movie-list");
+        movieList.innerHTML = "";
+        if (filtered.length === 0) {
+            movieList.innerHTML = "<p class='no-results'>Nessun film trovato.</p>";
+            return;
+        }
+        filtered.forEach(film => movieList.appendChild(creaCardFilm(film)));
+    }
+
+    document.getElementById("sort-order").addEventListener("change", renderMovies);
+
+    function creaCardFilm(film) {
+        const card = document.createElement("div");
+        card.className = "movie-card";
+
+        const langBadge = film.audio === "Italiano"
+            ? `<span class="lang-badge lang-ita">ITA</span>`
+            : `<span class="lang-badge lang-sub">SUB</span>`;
+
+        const watchBtn = film.link
+            ? `<a href="${film.link}" target="_blank" rel="noopener noreferrer">▶ Guarda</a>`
+            : "";
+        const trailerBtn = film.trailer
+            ? `<a href="${film.trailer}" target="_blank" rel="noopener noreferrer" style="background-color:#2980b9;">🎬 Trailer</a>`
+            : "";
+        const adminBtns = isAdmin ? `
+            <button class="edit-btn" onclick="apriModale('${film.key}')">✏️</button>
+            <button class="delete-btn" onclick="eliminaFilm('${film.key}')">🗑️</button>` : "";
+
+        card.innerHTML = `
+            <img src="${film.poster || 'https://via.placeholder.com/500x750?text=No+Poster'}" alt="${film.titolo}" loading="lazy">
+            <div class="movie-info">
+                <div>
+                    <h3>${film.titolo} ${langBadge}</h3>
+                    <p style="color:#aaa; font-size:0.9em;">${film.anno} · ${film.durata ? film.durata + ' min' : ''}</p>
+                    <p style="font-size:0.85em; color:#ccc;">${film.trama ? film.trama.substring(0,120)+'...' : ''}</p>
+                </div>
+                <div class="movie-actions">
+                    ${watchBtn}${trailerBtn}${adminBtns}
+                </div>
+            </div>`;
+        return card;
+    }
+
+    // ============================================================
+    // ELIMINA FILM
+    // ============================================================
+    function eliminaFilm(key) {
+        if (confirm("Sei sicuro di voler eliminare questo film?")) {
+            db.ref("films/" + key).remove()
+                .catch(err => alert("Errore eliminazione: " + err.message));
+        }
+    }
+
+    // ============================================================
+    // MODALE MODIFICA
+    // ============================================================
+    function apriModale(key) {
+        const film = allMovies.find(f => f.key === key);
+        if (!film) return;
+        editingMovieKey = key;
+        document.getElementById("edit-film-link").value = film.link || "";
+        document.getElementById("edit-trailer-link").value = film.trailer || "";
+        if (film.audio === "Italiano") {
+            document.getElementById("edit-audio-ita").checked = true;
+        } else {
+            document.getElementById("edit-audio-sub").checked = true;
+        }
+        document.getElementById("edit-modal").style.display = "flex";
+    }
+
+    document.querySelector(".close-button").addEventListener("click", () => {
+        document.getElementById("edit-modal").style.display = "none";
+    });
+
+    document.getElementById("save-edit-btn").addEventListener("click", () => {
+        if (!editingMovieKey) return;
+        const nuovoLink = document.getElementById("edit-film-link").value.trim();
+        const nuovoTrailer = document.getElementById("edit-trailer-link").value.trim();
+        const nuovoAudio = document.querySelector('input[name="edit-audio-lang"]:checked').value;
+        db.ref("films/" + editingMovieKey).update({
+            link: nuovoLink,
+            trailer: nuovoTrailer,
+            audio: nuovoAudio
+        }).then(() => {
+            document.getElementById("edit-modal").style.display = "none";
+            editingMovieKey = null;
+        }).catch(err => alert("Errore salvataggio: " + err.message));
+    });
+
+    document.querySelectorAll(".copy-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const targetId = btn.getAttribute("data-target");
+            const input = document.getElementById(targetId);
+            navigator.clipboard.writeText(input.value)
+                .then(() => { btn.textContent = "✓"; setTimeout(() => btn.textContent = "Copia", 1500); });
+        });
+    });
+</script>
+<script>
+    // ============================================================
+    // VARIABILI PALINSESTO
+    // ============================================================
+    let palinsestoGiorno = {};       // { "HH:MM": { filmKey, titolo, durata, link } }
+    let giornoVisualizzato = 0;      // 0 = oggi, -1 = ieri, +1 = domani
+    let intervalloOraInOnda = null;
+
+    // ============================================================
+    // UTILITY: ottieni la chiave data per Firebase
+    // ============================================================
+    function getDataKey(offsetGiorni = 0) {
+        const d = new Date();
+        d.setDate(d.getDate() + offsetGiorni);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    // ============================================================
+    // UTILITY: etichetta giorno leggibile
+    // ============================================================
+    function getLabelGiorno(offset) {
+        if (offset === 0) return "📅 Oggi — " + getDataKey(0);
+        if (offset === -1) return "⬅️ Ieri — " + getDataKey(-1);
+        if (offset === 1) return "➡️ Domani — " + getDataKey(1);
+        return getDataKey(offset);
+    }
+
+    // ============================================================
+    // NAVIGAZIONE TRA GIORNI
+    // ============================================================
+    function cambiaGiorno(direzione) {
+        giornoVisualizzato += direzione;
+        caricaPalinsestoGiorno(giornoVisualizzato);
+    }
+
+    // ============================================================
+    // CARICA PALINSESTO DA FIREBASE
+    // ============================================================
+    function caricaPalinsestoGiorno(offset) {
+        const dataKey = getDataKey(offset);
+        document.getElementById("giorno-corrente-label").textContent = getLabelGiorno(offset);
+
+        db.ref("palinsesto/" + dataKey).on("value", snapshot => {
+            palinsestoGiorno = snapshot.val() || {};
+            renderPalinsesto(offset);
+            if (offset === 0) {
+                aggiornaOraInOnda();
+                if (intervalloOraInOnda) clearInterval(intervalloOraInOnda);
+                intervalloOraInOnda = setInterval(aggiornaOraInOnda, 30000);
+            }
         });
     }
 
-    async function aggiungiAlPalinsesto() {
-        const orario = document.getElementById('orario-input').value;
-        const filmJson = document.getElementById('film-select').value;
+    // ============================================================
+    // RENDER TABELLA PALINSESTO
+    // ============================================================
+    function renderPalinsesto(offset) {
+        const tbody = document.getElementById("palinsesto-body");
+        tbody.innerHTML = "";
 
-        if (!orario || !filmJson) {
-            alert('Seleziona un orario e un film!');
+        const slots = Object.entries(palinsestoGiorno)
+            .sort((a, b) => a.localeCompare(b));
+
+        if (slots.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#aaa;">
+                Nessun film in programma per questo giorno.</td></tr>`;
             return;
         }
 
-        const film = JSON.parse(filmJson);
-        const data = getDataGiorno(giornoVisualizzato);
-        const chiave = getChiaveGiorno(data);
+        const ora = new Date();
+        const oraNow = ora.getHours() * 60 + ora.getMinutes();
 
-        let durata = 90;
-        if (film.tmdbId) {
-            durata = await getDurataFilm(film.tmdbId);
-        }
+        slots.forEach(([orario, slot], index) => {
+            const [hh, mm] = orario.split(":").map(Number);
+            const slotMinuti = hh * 60 + mm;
+            const fineMinuti = slotMinuti + (slot.durata || 0);
+            const isInOnda = offset === 0 && oraNow >= slotMinuti && oraNow < fineMinuti;
+            const isPassato = offset === 0 && oraNow >= fineMinuti;
 
-        const snapshot = await firebase.database().ref(`palinsesto/${chiave}`).once('value');
-        if (snapshot.exists()) {
-            const [hNew, mNew] = orario.split(':').map(Number);
-            const inizioNew = hNew * 60 + mNew;
-            const fineNew = inizioNew + durata;
-            let sovrapposti = [];
+            const tr = document.createElement("tr");
+            if (isInOnda) tr.classList.add("in-onda");
+            if (isPassato) tr.classList.add("passato");
 
-            snapshot.forEach(child => {
-                const v = child.val();
-                const [h, m] = v.orario.split(':').map(Number);
-                const inizioEsist = h * 60 + m;
-                const fineEsist = inizioEsist + (v.durata || 90);
-                if (inizioNew < fineEsist && fineNew > inizioEsist) {
-                    sovrapposti.push(v.titolo);
-                }
-            });
+            const linkCell = slot.link
+                ? `<a href="${slot.link}" target="_blank" rel="noopener noreferrer"
+                      style="color:#e94560;">▶ Guarda</a>`
+                : `<span style="color:#555;">—</span>`;
 
-            if (sovrapposti.length > 0) {
-                const conferma = confirm(
-                    `⚠️ Attenzione: il film si sovrappone con:\n- ${sovrapposti.join('\n- ')}\n\nVuoi aggiungerlo comunque?`
-                );
-                if (!conferma) return;
-            }
-        }
+            const adminCell = isAdmin
+                ? `<td>
+                    <button class="delete-btn" onclick="rimuoviDalPalinsesto('${getDataKey(offset)}','${orario}')">🗑️</button>
+                   </td>`
+                : `<td style="display:none;"></td>`;
 
-        await firebase.database().ref(`palinsesto/${chiave}`).push({
-            orario: orario,
-            titolo: film.titolo,
-            tmdbId: film.tmdbId || null,
-            durata: durata,
-            filmLink: film.filmLink || null
+            tr.innerHTML = `
+                <td><strong>${orario}</strong>${isInOnda ? ' 🔴' : ''}</td>
+                <td>
+                    ${slot.titolo}
+                    <br><small style="color:#aaa;">${slot.audio || ''}</small>
+                    <br>${linkCell}
+                </td>
+                <td>${slot.durata ? slot.durata + ' min' : '—'}</td>
+                ${adminCell}`;
+
+            tbody.appendChild(tr);
         });
-
-        document.getElementById('orario-input').value = '';
-        document.getElementById('film-select').value = '';
-        caricaPalinsesto();
     }
 
-    window.rimuoviDalPalinsesto = function (chiave, id) {
-        if (confirm('Rimuovere questo film dal palinsesto?')) {
-            firebase.database().ref(`palinsesto/${chiave}/${id}`).remove()
-                .then(() => caricaPalinsesto())
-                .catch(() => alert('Errore nella rimozione!'));
-        }
-    };
+    // ============================================================
+    // ORA IN ONDA — Banner + Barra avanzamento
+    // ============================================================
+    function aggiornaOraInOnda() {
+        const ora = new Date();
+        const oraNow = ora.getHours() * 60 + ora.getMinutes();
 
-    window.cambiaGiorno = function (direzione) {
-        giornoVisualizzato += direzione;
-        caricaPalinsesto();
-    };
+        const slots = Object.entries(palinsestoGiorno)
+            .sort((a, b) => a.localeCompare(b));
 
-    // ===== BANNER ORA IN ONDA =====
-    async function aggiornaBanner() {
-        const oggi = new Date();
-        const chiave = getChiaveGiorno(oggi);
+        let filmCorrente = null;
+        let filmProssimo = null;
 
-        try {
-            const snapshot = await firebase.database()
-                .ref(`palinsesto/${chiave}`).once('value');
-            if (!snapshot.exists()) {
-                document.getElementById('ora-in-onda-banner').style.display = 'none';
-                return;
-            }
+        for (let i = 0; i < slots.length; i++) {
+            const [orario, slot] = slots[i];
+            const [hh, mm] = orario.split(":").map(Number);
+            const slotMinuti = hh * 60 + mm;
+            const fineMinuti = slotMinuti + (slot.durata || 0);
 
-            const voci = [];
-            snapshot.forEach(child => voci.push(child.val()));
-            voci.sort((a, b) => a.orario.localeCompare(b.orario));
-
-            const minutiAdesso = oggi.getHours() * 60 + oggi.getMinutes();
-            let filmInOnda = null;
-
-            for (let i = 0; i < voci.length; i++) {
-                const [h, m] = voci[i].orario.split(':').map(Number);
-                const inizioMin = h * 60 + m;
-                const fineMin = inizioMin + (voci[i].durata || 90);
-                if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
-                    if (!filmInOnda || inizioMin > filmInOnda.inizioMin) {
-                        filmInOnda = { ...voci[i], inizioMin, fineMin };
-                    }
+            if (oraNow >= slotMinuti && oraNow < fineMinuti) {
+                filmCorrente = { orario, slot, slotMinuti, fineMinuti };
+                if (i + 1 < slots.length) {
+                    filmProssimo = slots[i + 1];
                 }
+                break;
             }
+        }
 
-            const banner = document.getElementById('ora-in-onda-banner');
+        const banner = document.getElementById("ora-in-onda-banner");
+        const playerBanner = document.getElementById("player-banner");
 
-            if (filmInOnda) {
-                const durata = filmInOnda.fineMin - filmInOnda.inizioMin;
-                const trascorso = minutiAdesso - filmInOnda.inizioMin;
-                const percentuale = Math.min(Math.round((trascorso / durata) * 100), 100);
+        if (filmCorrente) {
+            // Banner "Ora in Onda" nella sezione palinsesto
+            banner.style.display = "block";
+            document.getElementById("ora-in-onda-titolo").textContent = filmCorrente.slot.titolo;
+            document.getElementById("ora-in-onda-orario").textContent =
+                `(${filmCorrente.orario} — fine ore ${minutiToOrario(filmCorrente.fineMinuti)})`;
 
-                const hFine = Math.floor(filmInOnda.fineMin / 60) % 24;
-                const mFine = filmInOnda.fineMin % 60;
-                const orarioFine = `${String(hFine).padStart(2,'0')}:${String(mFine).padStart(2,'0')}`;
+            const elapsed = oraNow - filmCorrente.slotMinuti;
+            const total = filmCorrente.fineMinuti - filmCorrente.slotMinuti;
+            const perc = Math.min(100, Math.round((elapsed / total) * 100));
+            document.getElementById("barra-avanzamento").style.width = perc + "%";
+            document.getElementById("barra-percentuale").textContent = perc + "%";
 
-                document.getElementById('ora-in-onda-titolo').textContent = filmInOnda.titolo;
-                document.getElementById('ora-in-onda-orario').textContent =
-                    `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFine}`;
-                document.getElementById('barra-avanzamento').style.width = `${percentuale}%`;
-                document.getElementById('barra-percentuale').textContent = `${percentuale}%`;
-                banner.style.display = 'block';
+            // Banner flottante in basso
+            playerBanner.style.display = "flex";
+            document.getElementById("player-banner-titolo").textContent = filmCorrente.slot.titolo;
+            document.getElementById("player-banner-orario").textContent =
+                ` · ${filmCorrente.orario} › ${minutiToOrario(filmCorrente.fineMinuti)}`;
+
+            if (filmCorrente.slot.link) {
+                document.getElementById("player-banner-btn").href = filmCorrente.slot.link;
+                document.getElementById("player-banner-btn").style.display = "inline-block";
             } else {
-                banner.style.display = 'none';
-            }
-        } catch (err) {
-            console.log('Errore banner:', err);
-        }
-    }
-        // ===== BANNER PLAYER =====
-    async function aggiornaBannerPlayer() {
-        const oggi = new Date();
-        const chiave = getChiaveGiorno(oggi);
-
-        try {
-            const snapshot = await firebase.database()
-                .ref(`palinsesto/${chiave}`).once('value');
-
-            if (!snapshot.exists()) {
-                document.getElementById('player-banner').style.display = 'none';
-                document.getElementById('player-container').style.display = 'none';
-                document.getElementById('player-iframe').src = '';
-                return;
+                document.getElementById("player-banner-btn").style.display = "none";
             }
 
-            const voci = [];
-            snapshot.forEach(child => voci.push(child.val()));
-            voci.sort((a, b) => a.orario.localeCompare(b.orario));
-
-            const minutiAdesso = oggi.getHours() * 60 + oggi.getMinutes();
-            let filmInOnda = null;
-            let prossimoFilm = null;
-
-            for (let i = 0; i < voci.length; i++) {
-                const [h, m] = voci[i].orario.split(':').map(Number);
-                const inizioMin = h * 60 + m;
-                const fineMin = inizioMin + (voci[i].durata || 90);
-                if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
-                    if (!filmInOnda || inizioMin > filmInOnda.inizioMin) {
-                        filmInOnda = { ...voci[i], inizioMin, fineMin };
-                        prossimoFilm = voci[i + 1] || null;
-                    }
-                }
-            }
-
-            const banner = document.getElementById('player-banner');
-            const playerContainer = document.getElementById('player-container');
-            const playerIframe = document.getElementById('player-iframe');
-
-            if (filmInOnda && filmInOnda.filmLink) {
-                let link = filmInOnda.filmLink;
-                if (link.includes('mixdrop.co/f/'))  link = link.replace('mixdrop.co/f/', 'mixdrop.co/e/');
-                if (link.includes('mixdrop.top/f/')) link = link.replace('mixdrop.top/f/', 'mixdrop.top/e/');
-
-                const hFine = Math.floor(filmInOnda.fineMin / 60) % 24;
-                const mFine = filmInOnda.fineMin % 60;
-                const orarioFine = `${String(hFine).padStart(2,'0')}:${String(mFine).padStart(2,'0')}`;
-
-                if (playerIframe.dataset.currentFilm !== filmInOnda.titolo) {
-                    playerIframe.src = link;
-                    playerIframe.dataset.currentFilm = filmInOnda.titolo;
-                    playerContainer.style.display = 'block';
-
-                    if (playerIframe._nextFilmTimer) clearTimeout(playerIframe._nextFilmTimer);
-
-                    const msAllaFine = (filmInOnda.fineMin - minutiAdesso) * 60 * 1000;
-                    playerIframe._nextFilmTimer = setTimeout(() => {
-                        playerIframe.dataset.currentFilm = '';
-                        aggiornaBannerPlayer();
-                    }, msAllaFine);
-                }
-
-                document.getElementById('player-banner-titolo').textContent = filmInOnda.titolo;
-                document.getElementById('player-banner-orario').textContent =
-                    `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFine}`;
-                document.getElementById('ora-in-onda-orario').textContent =
-                    `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFine}`;
-                document.getElementById('player-banner-btn').href = link;
-
-                const minutiTrascorsi = minutiAdesso - filmInOnda.inizioMin;
-                let skipMsg = document.getElementById('skip-message');
-                if (!skipMsg) {
-                    skipMsg = document.createElement('p');
-                    skipMsg.id = 'skip-message';
-                    skipMsg.style.cssText = 'text-align:center; color:#e94560; font-size:1em; margin:10px 0; font-weight:bold;';
-                    playerContainer.insertAdjacentElement('afterend', skipMsg);
-                }
-                if (minutiTrascorsi > 0) {
-                    const ore = Math.floor(minutiTrascorsi / 60);
-                    const minuti = minutiTrascorsi % 60;
-                    const tempoTrascorso = ore > 0
-                        ? `${ore}h ${minuti > 0 ? minuti + 'm' : ''}`.trim()
-                        : `${minuti} minut${minuti === 1 ? 'o' : 'i'}`;
-                    skipMsg.textContent = `⏱️ Il film è già iniziato da ${tempoTrascorso}, vai avanti manualmente nella barra del player.`;
-                } else {
-                    skipMsg.textContent = '';
-                }
-
-                document.getElementById('player-banner-prossimo').textContent = prossimoFilm
-                    ? `⏭️ Prossimamente ore ${prossimoFilm.orario}: ${prossimoFilm.titolo}`
-                    : '';
-
-                banner.style.display = 'block';
-
+            if (filmProssimo) {
+                document.getElementById("player-banner-prossimo").textContent =
+                    `⏭ Prossimo: ${filmProssimo.titolo} alle ${filmProssimo}`;
             } else {
-                banner.style.display = 'none';
-                playerContainer.style.display = 'none';
-                playerIframe.src = '';
-                playerIframe.dataset.currentFilm = '';
-                const skipMsg = document.getElementById('skip-message');
-                if (skipMsg) skipMsg.textContent = '';
+                document.getElementById("player-banner-prossimo").textContent = "";
             }
 
-        } catch (err) {
-            console.log('Errore banner player:', err);
+        } else {
+            banner.style.display = "none";
+            playerBanner.style.display = "none";
+        }
+
+        // Aggiorna highlight righe tabella
+        renderPalinsesto(giornoVisualizzato);
+    }
+
+    function minutiToOrario(minuti) {
+        const hh = String(Math.floor(minuti / 60) % 24).padStart(2, "0");
+        const mm = String(minuti % 60).padStart(2, "0");
+        return `${hh}:${mm}`;
+    }
+
+    // ============================================================
+    // AGGIUNGI SLOT AL PALINSESTO
+    // ============================================================
+    function aggiornaSelectFilm() {
+        const select = document.getElementById("film-select");
+        select.innerHTML = `<option value="">-- Scegli un film --</option>`;
+        [...allMovies]
+            .sort((a, b) => a.titolo.localeCompare(b.titolo))
+            .forEach(film => {
+                const opt = document.createElement("option");
+                opt.value = film.key;
+                opt.textContent = `${film.titolo} (${film.anno}) · ${film.durata || '?'} min`;
+                select.appendChild(opt);
+            });
+    }
+
+    function aggiungiAlPalinsesto() {
+        const orario = document.getElementById("orario-input").value;
+        const filmKey = document.getElementById("film-select").value;
+        if (!orario || !filmKey) {
+            alert("Seleziona orario e film.");
+            return;
+        }
+
+        const film = allMovies.find(f => f.key === filmKey);
+        if (!film) return;
+
+        const dataKey = getDataKey(giornoVisualizzato);
+        const slot = {
+            filmKey: film.key,
+            titolo: film.titolo,
+            durata: film.durata || 0,
+            audio: film.audio || "",
+            link: film.link || "",
+            poster: film.poster || ""
+        };
+
+        db.ref(`palinsesto/${dataKey}/${orario}`).set(slot)
+            .then(() => {
+                document.getElementById("orario-input").value = "";
+                document.getElementById("film-select").value = "";
+            })
+            .catch(err => alert("Errore aggiunta palinsesto: " + err.message));
+    }
+
+    // ============================================================
+    // RIMUOVI SLOT DAL PALINSESTO
+    // ============================================================
+    function rimuoviDalPalinsesto(dataKey, orario) {
+        if (confirm(`Rimuovere il film delle ${orario}?`)) {
+            db.ref(`palinsesto/${dataKey}/${orario}`).remove()
+                .catch(err => alert("Errore rimozione: " + err.message));
         }
     }
 
-    // ===== AVVIO =====
-    aggiornaBanner();
-    aggiornaBannerPlayer();
-    setInterval(aggiornaBanner, 60000);
-    setInterval(aggiornaBannerPlayer, 60000);
+    // ============================================================
+    // AVVIO AUTOMATICO
+    // ============================================================
+    caricaPalinsestoGiorno(0);
 
 </script>
+    <!-- Fine script Parte 4 -->
+
 </body>
 </html>
