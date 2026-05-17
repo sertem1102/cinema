@@ -799,7 +799,14 @@
                     const percentuale = Math.min(Math.round((trascorso / durata) * 100), 100);
 
                     document.getElementById('ora-in-onda-titolo').textContent = filmInOnda.titolo;
-                    document.getElementById('ora-in-onda-orario').textContent = `ore ${filmInOnda.orario}`;
+
+// Calcola orario di fine
+const hFine = Math.floor(filmInOnda.fineMin / 60) % 24;
+const mFine = filmInOnda.fineMin % 60;
+const orarioFine = `${String(hFine).padStart(2,'0')}:${String(mFine).padStart(2,'0')}`;
+
+document.getElementById('ora-in-onda-orario').textContent =
+    `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFine}`;
                     document.getElementById('barra-avanzamento').style.width = `${percentuale}%`;
                     document.getElementById('barra-percentuale').textContent = `${percentuale}%`;
                     banner.style.display = 'block';
