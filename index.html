@@ -754,7 +754,20 @@
                         playerIframe.dataset.currentFilm = filmInOnda.titolo;
                         playerContainer.style.display = 'block';
                     }
+                    // Aggiorna iframe solo se il film è cambiato
+if (playerIframe.dataset.currentFilm !== filmInOnda.titolo) {
+    playerIframe.src = link;
+    playerIframe.dataset.currentFilm = filmInOnda.titolo;
+    playerContainer.style.display = 'block';
 
+    // Avvia il timer per il prossimo film SOLO quando cambia il film
+    if (playerIframe._nextFilmTimer) clearTimeout(playerIframe._nextFilmTimer);
+    const msAllaFine = (filmInOnda.fineMin - minutiAdesso) * 60 * 1000;
+    playerIframe._nextFilmTimer = setTimeout(() => {
+        playerIframe.dataset.currentFilm = ''; // forza il refresh
+        aggiornaBannerPlayer();
+    }, msAllaFine);
+}
                     document.getElementById('player-banner-titolo').textContent = filmInOnda.titolo;
                     document.getElementById('player-banner-orario').textContent =
                         `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFine}`;
@@ -785,10 +798,7 @@ skipMsg.textContent = `⏱️ Il film è già iniziato da ${tempoTrascorso}, vai
 
                     banner.style.display = 'block';
 
-                    // Aggiornamento automatico alla fine del film
-                    const secondiAllaFine = (filmInOnda.fineMin - minutiAdesso) * 60;
-                    setTimeout(() => aggiornaBannerPlayer(), secondiAllaFine * 1000);
-
+                
                 } else {
                     banner.style.display = 'none';
                     playerContainer.style.display = 'none';
