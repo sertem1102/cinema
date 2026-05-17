@@ -670,20 +670,27 @@
 
                     // Evidenzia la riga del film attualmente in onda
                     const [h, m] = voce.orario.split(':').map(Number);
-                    const inizioMin = h * 60 + m;
-                    const fineMin = inizioMin + (voce.durata || 90);
-                    const inOnda = minutiAdesso >= inizioMin && minutiAdesso < fineMin;
+const inizioMin = h * 60 + m;
+const fineMin = inizioMin + (voce.durata || 90); // dichiarato una volta sola
+const inOnda = minutiAdesso >= inizioMin && minutiAdesso < fineMin;
 
-                    if (inOnda) {
-                        tr.style.backgroundColor = '#1a3a2a';
-                        tr.style.borderLeft = '3px solid #e94560';
-                    }
-
-                    // Calcola orario di fine
-const fineMin = inizioMin + (voce.durata || 90);
+// Calcola orario di fine
 const hFine = Math.floor(fineMin / 60) % 24;
 const mFine = fineMin % 60;
 const orarioFine = `${String(hFine).padStart(2,'0')}:${String(mFine).padStart(2,'0')}`;
+
+if (inOnda) {
+    tr.style.backgroundColor = '#1a3a2a';
+    tr.style.borderLeft = '3px solid #e94560';
+}
+
+tr.innerHTML = `
+    <td>${inOnda ? '🔴 ' : ''}${voce.orario} - ${orarioFine}</td>
+    <td>${voce.titolo}</td>
+    <td>${durataStr}</td>
+    ${isAdmin ? `<td><button onclick="rimuoviDalPalinsesto('${chiave}','${voce.id}')"
+        style="padding:5px 10px; font-size:0.8em;">🗑️ Rimuovi</button></td>` : ''}
+`;
 
 tr.innerHTML = `
     <td>${inOnda ? '🔴 ' : ''}${voce.orario} - ${orarioFine}</td>
