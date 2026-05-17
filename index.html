@@ -318,7 +318,7 @@
     </div>
 
     <script>
-        const firebaseConfig = {
+                const firebaseConfig = {
             apiKey: "AIzaSyDg98bazXDqE1ESCZdzXeYhkXnsJZBpjvc",
             authDomain: "cinema-database-b2723.firebaseapp.com",
             databaseURL: "https://cinema-database-b2723-default-rtdb.europe-west1.firebasedatabase.app",
@@ -387,7 +387,6 @@
                 allMovies = [];
                 const data = snapshot.val();
                 if (data) {
-                    // Filtra solo i film, esclude il nodo 'palinsesto'
                     const raw = Array.isArray(data) ? data : Object.values(data);
                     allMovies = raw.filter(m => m !== null && m.title);
                 }
@@ -593,8 +592,8 @@
         });
 
         document.getElementById('sort-order').onchange = () => displayMovies(allMovies);
-                // ===== PALINSESTO =====
 
+        // ===== PALINSESTO =====
         function getGiovedìDiRiferimento() {
             const oggi = new Date();
             const giorno = oggi.getDay();
@@ -612,10 +611,8 @@
         }
 
         function formatDataLabel(data) {
-            const giorni = ['Domenica','Lunedì','Martedì','Mercoledì',
-                            'Giovedì','Venerdì','Sabato'];
-            const mesi = ['Gen','Feb','Mar','Apr','Mag','Giu',
-                          'Lug','Ago','Set','Ott','Nov','Dic'];
+            const giorni = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+            const mesi = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
             return `${giorni[data.getDay()]} ${data.getDate()} ${mesi[data.getMonth()]}`;
         }
 
@@ -625,9 +622,7 @@
 
         async function getDurataFilm(tmdbId) {
             try {
-                const res = await fetch(
-                    `${TMDB_BASE_URL}/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=it-IT`
-                );
+                const res = await fetch(`${TMDB_BASE_URL}/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=it-IT`);
                 const data = await res.json();
                 return data.runtime || 90;
             } catch {
@@ -636,7 +631,7 @@
         }
 
         async function caricaPalinsesto() {
-            const data = getDataGiorno(giornoVisualizzato);
+            const data = getData
             const chiave = getChiaveGiorno(data);
             document.getElementById('giorno-corrente-label').textContent = formatDataLabel(data);
 
