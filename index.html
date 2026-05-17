@@ -770,8 +770,12 @@
                         skipMsg.style.cssText = 'text-align:center; color:#e94560; font-size:1em; margin:10px 0; font-weight:bold;';
                         playerContainer.insertAdjacentElement('afterend', skipMsg);
                     }
-                    skipMsg.textContent = `⏱️ Il film è già iniziato da ${minutiTrascorsi} minut${minutiTrascorsi === 1 ? 'o' : 'i'}, vai avanti manualmente nella barra del player.`;
-
+                    const ore = Math.floor(minutiTrascorsi / 60);
+const minuti = minutiTrascorsi % 60;
+const tempoTrascorso = ore > 0
+    ? `${ore}h ${minuti > 0 ? minuti + 'm' : ''}`.trim()
+    : `${minuti} minut${minuti === 1 ? 'o' : 'i'}`;
+skipMsg.textContent = `⏱️ Il film è già iniziato da ${tempoTrascorso}, vai avanti manualmente nella barra del player.`;
                     if (prossimoFilm) {
                         document.getElementById('player-banner-prossimo').textContent =
                             `⏭️ Prossimamente ore ${prossimoFilm.orario}: ${prossimoFilm.titolo}`;
