@@ -14,7 +14,7 @@
         .movie-actions a:hover { background-color: #c03952; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a2e; color: #e0e0e0; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         h1 { color: #e94560; margin-bottom: 30px; text-align: center; }
-        .container { width: 90%; max-width: 1200px; background-color: #0f3460; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); margin-bottom: 40px; }
+        .container { width: 90%; max-width: 1200px; background-color: #0f3460; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); margin-bottom: 40px; }
         label { display: block; margin-bottom: 8px; color: #b0b0b0; }
         input[type="text"], textarea, select { width: calc(100% - 20px); padding: 12px; margin-bottom: 20px; border: 1px solid #2e4a81; border-radius: 5px; background-color: #0a1f3c; color: #e0e0e0; font-size: 1em; box-sizing: border-box; }
         .radio-group { margin-bottom: 20px; display: flex; gap: 20px; align-items: center; background: #0a1f3c; padding: 10px; border-radius: 5px; border: 1px solid #2e4a81; }
@@ -22,7 +22,7 @@
         button { background-color: #e94560; color: white; padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 1.1em; transition: background-color 0.3s ease; }
         button:hover { background-color: #c03952; }
         .movie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; justify-content: center; }
-        .movie-card { background-color: #1a1a2e; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); transition: transform 0.2s ease; display: flex; flex-direction: column; position: relative; }
+        .movie-card { background-color: #1a1a2e; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: transform 0.2s ease; display: flex; flex-direction: column; position: relative; }
         .movie-card:hover { transform: translateY(-5px); }
         .movie-card img { width: 100%; height: auto; object-fit: cover; border-bottom: 2px solid #0f3460; }
         .lang-badge { padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-left: 10px; vertical-align: middle; text-transform: uppercase; }
@@ -38,45 +38,11 @@
         .input-group { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
         .input-group input { flex-grow: 1; margin-bottom: 0; }
         .copy-btn { font-size: 0.9em; padding: 12px 15px; background-color: #2980b9; flex-shrink: 0; }
-        /* PLAYER IFRAME */
-#player-container {
-    display: none;
-    width: 90%;
-    max-width: 1200px;
-    margin-bottom: 40px;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-    background: #000;
-    aspect-ratio: 16/9;
-}
-
-#player-container iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    min-height: 480px;
-}
-
-        /* ===== PALINSESTO CSS ===== */
-        #palinsesto-section {
-            width: 90%;
-            max-width: 1200px;
-            background-color: #0f3460;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-            margin-bottom: 40px;
-        }
+        #player-container { display: none; width: 90%; max-width: 1200px; margin-bottom: 40px; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.4); background: #000; aspect-ratio: 16/9; }
+        #player-container iframe { width: 100%; height: 100%; border: none; min-height: 480px; }
+        #palinsesto-section { width: 90%; max-width: 1200px; background-color: #0f3460; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); margin-bottom: 40px; }
         #palinsesto-section h2 { color: #e94560; margin-top: 0; }
-        #ora-in-onda-banner {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            border-left: 5px solid #e94560;
-            border-radius: 8px;
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            color: white;
-        }
+        #ora-in-onda-banner { background: linear-gradient(135deg, #1a1a2e, #16213e); border-left: 5px solid #e94560; border-radius: 8px; padding: 15px 20px; margin-bottom: 20px; color: white; }
         #ora-in-onda-label { font-size: 0.8em; color: #e94560; font-weight: bold; display: block; margin-bottom: 5px; }
         #ora-in-onda-titolo { font-size: 1.4em; font-weight: bold; display: block; }
         #ora-in-onda-orario { font-size: 0.9em; color: #aaa; display: block; margin-bottom: 10px; }
@@ -88,80 +54,18 @@
         #palinsesto-table th { background-color: #1a1a2e; color: #e94560; padding: 10px 15px; text-align: left; }
         #palinsesto-table td { padding: 10px 15px; border-bottom: 1px solid #2e4a81; color: #e0e0e0; }
         #palinsesto-table tr:hover td { background-color: #16213e; }
-        #palinsesto-form {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 8px;
-            background: #1a1a2e;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-            border: 1px solid #2e4a81;
-        }
+        #palinsesto-form { margin-top: 20px; padding: 15px; border-radius: 8px; background: #1a1a2e; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; border: 1px solid #2e4a81; }
         #palinsesto-form h3 { width: 100%; margin: 0 0 10px 0; color: #e0e0e0; }
         #orario-input { padding: 10px; border-radius: 5px; border: 1px solid #2e4a81; background-color: #0a1f3c; color: #e0e0e0; font-size: 1em; }
         #film-select { flex-grow: 1; margin-bottom: 0; padding: 10px; }
-        /* BANNER FILM IN ONDA */
-#player-banner {
-    display: none;
-    width: 100%;
-    background: linear-gradient(135deg, #1a1a2e, #16213e);
-    border: 2px solid #e94560;
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 20px;
-    text-align: center;
-    box-sizing: border-box;
-}
-
-#player-banner h3 {
-    color: #e94560;
-    margin: 0 0 5px 0;
-    font-size: 1em;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-}
-
-#player-banner-titolo {
-    color: white;
-    font-size: 1.6em;
-    font-weight: bold;
-    display: block;
-    margin-bottom: 5px;
-}
-
-#player-banner-orario {
-    color: #aaa;
-    font-size: 0.9em;
-    display: block;
-    margin-bottom: 15px;
-}
-
-#player-banner-btn {
-    display: inline-block;
-    background-color: #e94560;
-    color: white;
-    padding: 12px 30px;
-    border-radius: 5px;
-    font-size: 1.1em;
-    font-weight: bold;
-    text-decoration: none;
-    transition: background-color 0.3s;
-    border: none;
-    cursor: pointer;
-}
-
-#player-banner-btn:hover {
-    background-color: #c03952;
-}
-
-#player-banner-prossimo {
-    color: #aaa;
-    font-size: 0.85em;
-    display: block;
-    margin-top: 12px;
-}
+        #player-banner { display: none; width: 90%; max-width: 1200px; background: linear-gradient(135deg, #1a1a2e, #16213e); border: 2px solid #e94560; border-radius: 10px; padding: 20px; margin-bottom: 20px; text-align: center; box-sizing: border-box; }
+        #player-banner h3 { color: #e94560; margin: 0 0 5px 0; font-size: 1em; text-transform: uppercase; letter-spacing: 2px; }
+        #player-banner-titolo { color: white; font-size: 1.6em; font-weight: bold; display: block; margin-bottom: 5px; }
+        #player-banner-orario { color: #aaa; font-size: 0.9em; display: block; margin-bottom: 15px; }
+        #player-banner-btn { display: inline-block; background-color: #e94560; color: white; padding: 12px 30px; border-radius: 5px; font-size: 1.1em; font-weight: bold; text-decoration: none; transition: background-color 0.3s; border: none; cursor: pointer; }
+        #player-banner-btn:hover { background-color: #c03952; }
+        #player-banner-prossimo { color: #aaa; font-size: 0.85em; display: block; margin-top: 12px; }
+        #skip-message { text-align: center; color: #e94560; font-size: 1em; margin: 10px 0; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -178,12 +82,10 @@
         <input type="text" id="tmdb-search" placeholder="Es. Inception oppure 600354">
         <button id="search-movie-btn">Cerca Film</button>
         <p id="search-status" style="color: #e94560; margin-top: 10px;"></p>
-        
         <div id="search-results-container" style="display:none; margin-top: 20px;">
             <h3>Risultati della ricerca:</h3>
             <div id="search-results-list" class="movie-grid"></div>
         </div>
-
         <div id="movie-details-form" style="display: none; margin-top: 20px;">
             <h3>Dettagli Film Trovato:</h3>
             <div style="display: flex; gap: 20px; margin-bottom: 20px;">
@@ -225,30 +127,20 @@
         </div>
     </div>
 
-    <!-- SEZIONE PALINSESTO -->
-    <!-- BANNER FILM IN ONDA -->
-    <!-- PLAYER IFRAME -->
-<div id="player-container">
-    <iframe id="player-iframe" 
-        src="" 
-        allowfullscreen 
-        scrolling="no" 
-        frameborder="0">
-    </iframe>
-</div>
-<div id="player-banner">
-    <h3>🔴 Ora in Onda</h3>
-    <span id="player-banner-titolo"></span>
-    <span id="player-banner-orario"></span>
-    <a id="player-banner-btn" href="#" target="_blank" rel="noopener noreferrer">
-        ▶ Guarda Ora
-    </a>
-    <span id="player-banner-prossimo"></span>
-</div>
-    <div id="palinsesto-section">
+    <div id="player-container">
+        <iframe id="player-iframe" src="" allowfullscreen scrolling="no" frameborder="0"></iframe>
+    </div>
+
+    <div id="player-banner">
+        <h3>🔴 Ora in Onda</h3>
+        <span id="player-banner-titolo"></span>
+        <span id="player-banner-orario"></span>
+        <a id="player-banner-btn" href="#" target="_blank" rel="noopener noreferrer">▶ Guarda Ora</a>
+        <span id="player-banner-prossimo"></span>
+    </div>
+        <div id="palinsesto-section">
         <h2>📺 Palinsesto Cinema</h2>
 
-        <!-- BANNER ORA IN ONDA -->
         <div id="ora-in-onda-banner" style="display:none;">
             <span id="ora-in-onda-label">🎬 ORA IN ONDA</span>
             <span id="ora-in-onda-titolo"></span>
@@ -259,14 +151,12 @@
             </div>
         </div>
 
-        <!-- NAVIGAZIONE GIORNI -->
         <div id="palinsesto-nav">
             <button onclick="cambiaGiorno(-1)">◀ Giorno precedente</button>
             <span id="giorno-corrente-label"></span>
             <button onclick="cambiaGiorno(1)">Giorno successivo ▶</button>
         </div>
 
-        <!-- TABELLA -->
         <div id="palinsesto-container">
             <table id="palinsesto-table">
                 <thead>
@@ -281,7 +171,6 @@
             </table>
         </div>
 
-        <!-- FORM AGGIUNTA (solo admin) -->
         <div id="palinsesto-form" style="display:none;">
             <h3>➕ Aggiungi al Palinsesto</h3>
             <input type="time" id="orario-input" />
@@ -293,7 +182,7 @@
     </div>
 
     <div id="edit-modal" class="modal">
-                <div class="modal-content">
+        <div class="modal-content">
             <span class="close-button">&times;</span>
             <h3>Modifica Film</h3>
             <label>Lingua Audio:</label>
@@ -631,10 +520,10 @@
         }
 
         async function caricaPalinsesto() {
-            const data = getData
-            const chiave = getChiaveGiorno(data);
+            const data = getDataGiorno(giornoVisualizzato);
+            const chiave = getChiaveGiorno(data
+                                                       );
             document.getElementById('giorno-corrente-label').textContent = formatDataLabel(data);
-
             document.getElementById('col-azioni').style.display = isAdmin ? '' : 'none';
             document.getElementById('palinsesto-form').style.display = isAdmin ? 'block' : 'none';
 
@@ -655,7 +544,6 @@
                 });
                 voci.sort((a, b) => a.orario.localeCompare(b.orario));
 
-                // Calcola ora attuale per evidenziare il film in onda
                 const ora = new Date();
                 const minutiAdesso = ora.getHours() * 60 + ora.getMinutes();
 
@@ -663,34 +551,24 @@
                     const tr = document.createElement('tr');
                     const durataStr = voce.durata ? `${voce.durata} min` : '...';
 
-                    // Evidenzia la riga del film attualmente in onda
                     const [h, m] = voce.orario.split(':').map(Number);
-const inizioMin = h * 60 + m;
-const fineMin = inizioMin + (voce.durata || 90); // dichiarato una volta sola
-const inOnda = minutiAdesso >= inizioMin && minutiAdesso < fineMin;
+                    const inizioMin = h * 60 + m;
+                    const fineMin = inizioMin + (voce.durata || 90);
+                    const inOnda = minutiAdesso >= inizioMin && minutiAdesso < fineMin;
 
-// Calcola orario di fine
-const hFine = Math.floor(fineMin / 60) % 24;
-const mFine = fineMin % 60;
-const orarioFine = `${String(hFine).padStart(2,'0')}:${String(mFine).padStart(2,'0')}`;
+                    const hFine = Math.floor(fineMin / 60) % 24;
+                    const mFine = fineMin % 60;
+                    const orarioFine = `${String(hFine).padStart(2,'0')}:${String(mFine).padStart(2,'0')}`;
 
-if (inOnda) {
-    tr.style.backgroundColor = '#1a3a2a';
-    tr.style.borderLeft = '3px solid #e94560';
-}
+                    if (inOnda) {
+                        tr.style.backgroundColor = '#1a3a2a';
+                        tr.style.borderLeft = '3px solid #e94560';
+                    }
 
-tr.innerHTML = `
-    <td>${inOnda ? '🔴 ' : ''}${voce.orario} - ${orarioFine}</td>
-    <td>${voce.titolo}</td>
-    <td>${durataStr}</td>
-    ${isAdmin ? `<td><button onclick="rimuoviDalPalinsesto('${chiave}','${voce.id}')"
-        style="padding:5px 10px; font-size:0.8em;">🗑️ Rimuovi</button></td>` : ''}
-`;
-
-tr.innerHTML = `
-    <td>${inOnda ? '🔴 ' : ''}${voce.orario} - ${orarioFine}</td>
-    <td>${voce.titolo}</td>
-    <td>${durataStr}</td>
+                    tr.innerHTML = `
+                        <td>${inOnda ? '🔴 ' : ''}${voce.orario} - ${orarioFine}</td>
+                        <td>${voce.titolo}</td>
+                        <td>${durataStr}</td>
                         ${isAdmin ? `<td><button onclick="rimuoviDalPalinsesto('${chiave}','${voce.id}')"
                             style="padding:5px 10px; font-size:0.8em;">🗑️ Rimuovi</button></td>` : ''}
                     `;
@@ -699,7 +577,7 @@ tr.innerHTML = `
             });
         }
 
-                function popolaSelectFilm() {
+        function popolaSelectFilm() {
             firebase.database().ref('/').once('value', snapshot => {
                 const select = document.getElementById('film-select');
                 select.innerHTML = '<option value="">-- Scegli un film --</option>';
@@ -715,7 +593,7 @@ tr.innerHTML = `
                     opt.value = JSON.stringify({
                         titolo: film.title,
                         tmdbId: film.id || null,
-                        filmLink: film.filmLink || null  // <-- aggiunto!
+                        filmLink: film.filmLink || null
                     });
                     opt.textContent = film.title;
                     select.appendChild(opt);
@@ -724,38 +602,36 @@ tr.innerHTML = `
         }
 
         async function aggiungiAlPalinsesto() {
-    const orario = document.getElementById('orario-input').value;
-    const filmJson = document.getElementById('film-select').value;
+            const orario = document.getElementById('orario-input').value;
+            const filmJson = document.getElementById('film-select').value;
 
-    if (!orario || !filmJson) {
-        alert('Seleziona un orario e un film!');
-        return;
-    }
+            if (!orario || !filmJson) {
+                alert('Seleziona un orario e un film!');
+                return;
+            }
 
-    const film = JSON.parse(filmJson);
-    const data = getDataGiorno(giornoVisualizzato);
-    const chiave = getChiaveGiorno(data);
+            const film = JSON.parse(filmJson);
+            const data = getDataGiorno(giornoVisualizzato);
+            const chiave = getChiaveGiorno(data);
 
-    // Recupera durata da TMDB
-    let durata = 90;
-    if (film.tmdbId) {
-        durata = await getDurataFilm(film.tmdbId);
-    }
+            let durata = 90;
+            if (film.tmdbId) {
+                durata = await getDurataFilm(film.tmdbId);
+            }
 
-    await firebase.database().ref(`palinsesto/${chiave}`).push({
-        orario: orario,
-        titolo: film.titolo,
-        tmdbId: film.tmdbId || null,
-        durata: durata,
-        filmLink: film.filmLink || null  // <-- aggiunto il link!
-    });
+            await firebase.database().ref(`palinsesto/${chiave}`).push({
+                orario: orario,
+                titolo: film.titolo,
+                tmdbId: film.tmdbId || null,
+                durata: durata,
+                filmLink: film.filmLink || null
+            });
 
-    // Resetta il form
-    document.getElementById('orario-input').value = '';
-    document.getElementById('film-select').value = '';
+            document.getElementById('orario-input').value = '';
+            document.getElementById('film-select').value = '';
+            caricaPalinsesto();
+        }
 
-    caricaPalinsesto();
-}
         window.rimuoviDalPalinsesto = function(chiave, id) {
             if (confirm('Rimuovere questo film dal palinsesto?')) {
                 firebase.database().ref(`palinsesto/${chiave}/${id}`).remove()
@@ -769,7 +645,8 @@ tr.innerHTML = `
             caricaPalinsesto();
         };
 
-                async function aggiornaBanner() {
+        // ===== BANNER ORA IN ONDA =====
+        async function aggiornaBanner() {
             const oggi = new Date();
             const chiave = getChiaveGiorno(oggi);
 
@@ -792,7 +669,6 @@ tr.innerHTML = `
                     const [h, m] = voci[i].orario.split(':').map(Number);
                     const inizioMin = h * 60 + m;
                     const fineMin = inizioMin + (voci[i].durata || 90);
-
                     if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
                         filmInOnda = { ...voci[i], inizioMin, fineMin };
                         break;
@@ -806,15 +682,13 @@ tr.innerHTML = `
                     const trascorso = minutiAdesso - filmInOnda.inizioMin;
                     const percentuale = Math.min(Math.round((trascorso / durata) * 100), 100);
 
+                    const hFine = Math.floor(filmInOnda.fineMin / 60) % 24;
+                    const mFine = filmInOnda.fineMin % 60;
+                    const orarioFine = `${String(hFine).padStart(2,'0')}:${String(mFine).padStart(2,'0')}`;
+
                     document.getElementById('ora-in-onda-titolo').textContent = filmInOnda.titolo;
-
-// Calcola orario di fine
-const hFine = Math.floor(filmInOnda.fineMin / 60) % 24;
-const mFine = filmInOnda.fineMin % 60;
-const orarioFine = `${String(hFine).padStart(2,'0')}:${String(mFine).padStart(2,'0')}`;
-
-document.getElementById('ora-in-onda-orario').textContent =
-    `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFine}`;
+                    document.getElementById('ora-in-onda-orario').textContent =
+                        `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFine}`;
                     document.getElementById('barra-avanzamento').style.width = `${percentuale}%`;
                     document.getElementById('barra-percentuale').textContent = `${percentuale}%`;
                     banner.style.display = 'block';
@@ -826,136 +700,78 @@ document.getElementById('ora-in-onda-orario').textContent =
             }
         }
 
-        // ===== BANNER CLICCABILE =====
+        // ===== BANNER PLAYER =====
         async function aggiornaBannerPlayer() {
-    const oggi = new Date();
-    const chiave = getChiaveGiorno(oggi);
+            const oggi = new Date();
+            const chiave = getChiaveGiorno(oggi);
 
-    try {
-        const snapshot = await firebase.database()
-            .ref(`palinsesto/${chiave}`).once('value');
+            try {
+                const snapshot = await firebase.database()
+                    .ref(`palinsesto/${chiave}`).once('value');
 
-        if (!snapshot.exists()) {
-            document.getElementById('player-banner').style.display = 'none';
-            document.getElementById('player-container').style.display = 'none';
-            document.getElementById('player-iframe').src = '';
-            return;
-        }
+                if (!snapshot.exists()) {
+                    document.getElementById('player-banner').style.display = 'none';
+                    document.getElementById('player-container').style.display = 'none';
+                    document.getElementById('player-iframe').src = '';
+                    return;
+                }
 
-        const voci = [];
-        snapshot.forEach(child => voci.push(child.val()));
-        voci.sort((a, b) => a.orario.localeCompare(b.orario));
+                const voci = [];
+                snapshot.forEach(child => voci.push(child.val()));
+                voci.sort((a, b) => a.orario.localeCompare(b.orario));
 
-        const minutiAdesso = oggi.getHours() * 60 + oggi.getMinutes();
-        let filmInOnda = null;
-        let prossimoFilm = null;
+                const minutiAdesso = oggi.getHours() * 60 + oggi.getMinutes();
+                let filmInOnda = null;
+                let prossimoFilm = null;
 
-        for (let i = 0; i < voci.length; i++) {
-            const [h, m] = voci[i].orario.split(':').map(Number);
-            const inizioMin = h * 60 + m;
-            const fineMin = inizioMin + (voci[i].durata || 90);
+                for (let i = 0; i < voci.length; i++) {
+                    const [h, m] = voci[i].orario.split(':').map(Number);
+                    const inizioMin = h * 60 + m;
+                    const fineMin = inizioMin + (voci[i].durata || 90);
+                    if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
+                        filmInOnda = { ...voci[i], inizioMin, fineMin };
+                        if (i + 1 < voci.length) prossimoFilm = voci[i + 1];
+                        break;
+                    }
+                }
 
-            if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
-                filmInOnda = { ...voci[i], inizioMin, fineMin };
-                if (i + 1 < voci.length) prossimoFilm = voci[i + 1];
-                break;
-            }
-        }
-
-        const banner = document.getElementById('player-banner');
-        const playerContainer = document.getElementById('player-container');
-        const playerIframe = document.getElementById('player-iframe');
-
-        if (filmInOnda && filmInOnda.filmLink) {
-            let link = filmInOnda.filmLink;
-            if (link.includes('mixdrop.co/f/')) link = link.replace('mixdrop.co/f/', 'mixdrop.co/e/');
-            if (link.includes('mixdrop.top/f/')) link = link.replace('mixdrop.top/f/', 'mixdrop.top/e/');
-
-            // Calcola orario di fine
-            const hFine = Math.floor(filmInOnda.fineMin / 60) % 24;
-            const mFine = filmInOnda.fineMin % 60;
-            const orarioFine = `${String(hFine).padStart(2,'0')}:${String(mFine).padStart(2,'0')}`;
-
-            // Aggiorna iframe solo se il film è cambiato
-            // Usa un attributo data per tracciare il film corrente
-            if (playerIframe.dataset.currentFilm !== filmInOnda.titolo) {
-                playerIframe.src = link;
-                playerIframe.dataset.currentFilm = filmInOnda.titolo;
-                playerContainer.style.display = 'block';
-            }
-
-            document.getElementById('player-banner-titolo').textContent = filmInOnda.titolo;
-            document.getElementById('player-banner-orario').textContent =
-                `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFine}`;
-            document.getElementById('ora-in-onda-orario').textContent =
-                `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFine}`;
-
-            if (prossimoFilm) {
-                document.getElementById('player-banner-prossimo').textContent =
-                    `⏭️ Prossimamente ore ${prossimoFilm.orario}: ${prossimoFilm.titolo}`;
-            } else {
-                document.getElementById('player-banner-prossimo').textContent = '';
-            }
-
-            banner.style.display = 'block';
-
-            // Pianifica aggiornamento automatico alla fine del film
-            const secondiAllaFine = (filmInOnda.fineMin - minutiAdesso) * 60;
-            setTimeout(() => aggiornaBannerPlayer(), secondiAllaFine * 1000);
-
-        } else {
-            banner.style.display = 'none';
-            playerContainer.style.display = 'none';
-            playerIframe.src = '';
-            playerIframe.dataset.currentFilm = '';
-        }
-
-    } catch (err) {
-        console.log('Errore banner player:', err);
-    }
-}
                 const banner = document.getElementById('player-banner');
+                const playerContainer = document.getElementById('player-container');
+                const playerIframe = document.getElementById('player-iframe');
 
-                                                if (filmInOnda && filmInOnda.filmLink) {
+                if (filmInOnda && filmInOnda.filmLink) {
                     let link = filmInOnda.filmLink;
-                    // Converti link Mixdrop /f/ in /e/ per embed
-                    if (link.includes('mixdrop.co/f/')) {
-                        link = link.replace('mixdrop.co/f/', 'mixdrop.co/e/');
-                    }
-                    if (link.includes('mixdrop.top/f/')) {
-                        link = link.replace('mixdrop.top/f/', 'mixdrop.top/e/');
-                    }
+                    if (link.includes('mixdrop.co/f/')) link = link.replace('mixdrop.co/f/', 'mixdrop.co/e/');
+                    if (link.includes('mixdrop.top/f/')) link = link.replace('mixdrop.top/f/', 'mixdrop.top/e/');
 
-                    // Calcola orario di fine film
-                    const [hInizio, mInizio] = filmInOnda.orario.split(':').map(Number);
-                    const inizioMin = hInizio * 60 + mInizio;
-                    const fineMin = inizioMin + (filmInOnda.durata || 90);
-                    const hFine = Math.floor(fineMin / 60) % 24;
-                    const mFine = fineMin % 60;
+                    const hFine = Math.floor(filmInOnda.fineMin / 60) % 24;
+                    const mFine = filmInOnda.fineMin % 60;
                     const orarioFine = `${String(hFine).padStart(2,'0')}:${String(mFine).padStart(2,'0')}`;
+
+                    // Aggiorna iframe solo se il film è cambiato
+                    if (playerIframe.dataset.currentFilm !== filmInOnda.titolo) {
+                        playerIframe.src = link;
+                        playerIframe.dataset.currentFilm = filmInOnda.titolo;
+                        playerContainer.style.display = 'block';
+                    }
 
                     document.getElementById('player-banner-titolo').textContent = filmInOnda.titolo;
                     document.getElementById('player-banner-orario').textContent =
                         `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFine}`;
+                    document.getElementById('ora-in-onda-orario').textContent =
+                        `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFine}`;
 
-                    // Carica il film nell'iframe
-                    const playerContainer = document.getElementById('player-container');
-                    const playerIframe = document.getElementById('player-iframe');
-                    
-                    // Aggiorna iframe solo se il film è cambiato
-                    if (playerIframe.src !== link) {
-                        playerIframe.src = link;
-                        playerContainer.style.display = 'block';
+                    // Messaggio minuti trascorsi
+                    const minutiTrascorsi = minutiAdesso - filmInOnda.inizioMin;
+                    let skipMsg = document.getElementById('skip-message');
+                    if (!skipMsg) {
+                        skipMsg = document.createElement('p');
+                        skipMsg.id = 'skip-message';
+                        skipMsg.style.cssText = 'text-align:center; color:#e94560; font-size:1em; margin:10px 0; font-weight:bold;';
+                        playerContainer.insertAdjacentElement('afterend', skipMsg);
                     }
-                    const [hI, mI] = filmInOnda.orario.split(':').map(Number);
-                    const inizioMinBanner = hI * 60 + mI;
-                    const fineMinBanner = inizioMinBanner + (filmInOnda.durata || 90);
-                    const hFB = Math.floor(fineMinBanner / 60) % 24;
-                    const mFB = fineMinBanner % 60;
-                    const orarioFineBanner = `${String(hFB).padStart(2,'0')}:${String(mFB).padStart(2,'0')}`;
+                    skipMsg.textContent = `⏱️ Il film è già iniziato da ${minutiTrascorsi} minut${minutiTrascorsi === 1 ? 'o' : 'i'}, vai avanti manualmente nella barra del player.`;
 
-document.getElementById('ora-in-onda-orario').textContent =
-    `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFineBanner}`;
                     if (prossimoFilm) {
                         document.getElementById('player-banner-prossimo').textContent =
                             `⏭️ Prossimamente ore ${prossimoFilm.orario}: ${prossimoFilm.titolo}`;
@@ -964,11 +780,18 @@ document.getElementById('ora-in-onda-orario').textContent =
                     }
 
                     banner.style.display = 'block';
+
+                    // Aggiornamento automatico alla fine del film
+                    const secondiAllaFine = (filmInOnda.fineMin - minutiAdesso) * 60;
+                    setTimeout(() => aggiornaBannerPlayer(), secondiAllaFine * 1000);
+
                 } else {
-                    // Nascondi tutto se nessun film in onda
-                                       banner.style.display = 'none';
-                    document.getElementById('player-container').style.display = 'none';
-                    document.getElementById('player-iframe').src = '';
+                    banner.style.display = 'none';
+                    playerContainer.style.display = 'none';
+                    playerIframe.src = '';
+                    playerIframe.dataset.currentFilm = '';
+                    const skipMsg = document.getElementById('skip-message');
+                    if (skipMsg) skipMsg.textContent = '';
                 }
 
             } catch (err) {
@@ -976,11 +799,6 @@ document.getElementById('ora-in-onda-orario').textContent =
             }
         }
 
-        // ===== AVVIO =====
-        aggiornaBanner();
-        aggiornaBannerPlayer();
-        setInterval(aggiornaBanner, 60000);
-        setInterval(aggiornaBannerPlayer, 60000);
         // ===== AVVIO =====
         aggiornaBanner();
         aggiornaBannerPlayer();
