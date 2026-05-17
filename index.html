@@ -129,86 +129,8 @@
             <p class="no-results">Connessione al database in corso...</p>
         </div>
     </div>
-        <div id="player-container">
-        <iframe id="player-iframe" src="" allowfullscreen scrolling="no" frameborder="0"></iframe>
-    </div>
 
-    <div id="player-banner">
-        <h3>🔴 Ora in Onda</h3>
-        <span id="player-banner-titolo"></span>
-        <span id="player-banner-orario"></span>
-        <a id="player-banner-btn" href="#" target="_blank" rel="noopener noreferrer">▶ Guarda Ora</a>
-        <span id="player-banner-prossimo"></span>
-    </div>
-
-    <div id="palinsesto-section">
-        <h2>📺 Palinsesto Cinema</h2>
-
-        <div id="ora-in-onda-banner" style="display:none;">
-            <span id="ora-in-onda-label">🎬 ORA IN ONDA</span>
-            <span id="ora-in-onda-titolo"></span>
-            <span id="ora-in-onda-orario"></span>
-            <div id="barra-container">
-                <div id="barra-avanzamento"></div>
-                <span id="barra-percentuale"></span>
-            </div>
-        </div>
-
-        <div id="palinsesto-nav">
-            <button onclick="cambiaGiorno(-1)">◀ Giorno precedente</button>
-            <span id="giorno-corrente-label"></span>
-            <button onclick="cambiaGiorno(1)">Giorno successivo ▶</button>
-        </div>
-
-        <div id="palinsesto-container">
-            <table id="palinsesto-table">
-                <thead>
-                    <tr>
-                        <th>Orario</th>
-                        <th>Film</th>
-                        <th>Durata</th>
-                        <th id="col-azioni" style="display:none;">Azioni</th>
-                    </tr>
-                </thead>
-                <tbody id="palinsesto-body"></tbody>
-            </table>
-        </div>
-
-        <div id="palinsesto-form" style="display:none;">
-            <h3>➕ Aggiungi al Palinsesto</h3>
-            <input type="time" id="orario-input" />
-            <select id="film-select">
-                <option value="">-- Scegli un film --</option>
-            </select>
-            <button onclick="aggiungiAlPalinsesto()">Aggiungi</button>
-        </div>
-    </div>
-
-    <div id="edit-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h3>Modifica Film</h3>
-            <label>Lingua Audio:</label>
-            <div class="radio-group">
-                <input type="radio" id="edit-audio-ita" name="edit-audio-lang" value="Italiano">
-                <label for="edit-audio-ita">Italiano 🇮🇹</label>
-                <input type="radio" id="edit-audio-sub" name="edit-audio-lang" value="Sub ITA">
-                <label for="edit-audio-sub">Sub ITA 💬</label>
-            </div>
-            <label for="edit-film-link">Link al Film:</label>
-            <div class="input-group">
-                <input type="text" id="edit-film-link">
-                <button class="copy-btn" data-target="edit-film-link">Copia</button>
-            </div>
-            <label for="edit-trailer-link">Link al Trailer:</label>
-            <div class="input-group">
-                <input type="text" id="edit-trailer-link">
-                <button class="copy-btn" data-target="edit-trailer-link">Copia</button>
-            </div>
-            <button id="save-edit-btn">Salva Modifiche Online</button>
-        </div>
-    </div>
-        <div id="player-container">
+    <div id="player-container">
         <iframe id="player-iframe" src="" allowfullscreen scrolling="no" frameborder="0"></iframe>
     </div>
 
@@ -357,15 +279,8 @@
             allMovies = [];
             const data = snapshot.val();
             if (data) {
-                let raw = [];
-                if (Array.isArray(data)) {
-                    raw = data;
-                } else if (typeof data === 'object') {
-                    raw = Object.entries(data)
-                        .filter(([key]) => key !== 'palinsesto')
-                        .map(([, val]) => val);
-                }
-                allMovies = raw.filter(m => m !== null && m !== undefined && m.title);
+                const raw = Array.isArray(data) ? data : Object.values(data);
+                allMovies = raw.filter(m => m !== null && m.title);
             }
             displayMovies(allMovies);
         });
@@ -572,7 +487,8 @@
     });
 
     document.getElementById('sort-order').onchange = () => displayMovies(allMovies);
-        // ===== PALINSESTO =====
+
+    // ===== PALINSESTO =====
     function getGiovedìDiRiferimento() {
         const oggi = new Date();
         const giorno = oggi.getDay();
@@ -610,6 +526,9 @@
     }
 
     async function caricaPalinsesto() {
+        const data = getDataGiorno(giornoVisualizzato);
+        const chiave = getChiaveGiorno(data
+            async function caricaPalinsesto() {
         const data = getDataGiorno(giornoVisualizzato);
         const chiave = getChiaveGiorno(data);
         document.getElementById('giorno-corrente-label').textContent = formatDataLabel(data);
@@ -650,6 +569,7 @@
 
                 const inOnda = minutiAdesso >= inizioMin && minutiAdesso < fineMin;
 
+                // Controlla se si sovrappone col film precedente
                 let sovrapposto = false;
                 if (index > 0) {
                     const [hPrec, mPrec] = voci[index - 1].orario.split(':').map(Number);
@@ -685,15 +605,8 @@
             const data = snapshot.val();
             if (!data) return;
 
-            let raw = [];
-            if (Array.isArray(data)) {
-                raw = data;
-            } else if (typeof data === 'object') {
-                raw = Object.entries(data)
-                    .filter(([key]) => key !== 'palinsesto')
-                    .map(([, val]) => val);
-            }
-            const films = raw.filter(m => m !== null && m !== undefined && m.title);
+            const raw = Array.isArray(data) ? data : Object.values(data);
+            const films = raw.filter(m => m !== null && m.title);
             films.sort((a, b) => a.title.localeCompare(b.title));
 
             films.forEach(film => {
@@ -727,6 +640,7 @@
             durata = await getDurataFilm(film.tmdbId);
         }
 
+        // Controlla sovrapposizioni e avvisa (ma NON blocca)
         const snapshot = await firebase.database().ref(`palinsesto/${chiave}`).once('value');
         if (snapshot.exists()) {
             const [hNew, mNew] = orario.split(':').map(Number);
@@ -803,6 +717,7 @@
                 const inizioMin = h * 60 + m;
                 const fineMin = inizioMin + (voci[i].durata || 90);
                 if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
+                    // In caso di accavallamento prende il film con inizio più recente
                     if (!filmInOnda || inizioMin > filmInOnda.inizioMin) {
                         filmInOnda = { ...voci[i], inizioMin, fineMin };
                     }
@@ -833,7 +748,8 @@
             console.log('Errore banner:', err);
         }
     }
-        // ===== BANNER PLAYER =====
+
+    // ===== BANNER PLAYER =====
     async function aggiornaBannerPlayer() {
         const oggi = new Date();
         const chiave = getChiaveGiorno(oggi);
@@ -862,6 +778,7 @@
                 const inizioMin = h * 60 + m;
                 const fineMin = inizioMin + (voci[i].durata || 90);
                 if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
+                    // In caso di accavallamento prende il film con inizio più recente
                     if (!filmInOnda || inizioMin > filmInOnda.inizioMin) {
                         filmInOnda = { ...voci[i], inizioMin, fineMin };
                         prossimoFilm = voci[i + 1] || null;
@@ -882,13 +799,16 @@
                 const mFine = filmInOnda.fineMin % 60;
                 const orarioFine = `${String(hFine).padStart(2,'0')}:${String(mFine).padStart(2,'0')}`;
 
+                // Aggiorna iframe SOLO se il film è cambiato
                 if (playerIframe.dataset.currentFilm !== filmInOnda.titolo) {
                     playerIframe.src = link;
                     playerIframe.dataset.currentFilm = filmInOnda.titolo;
                     playerContainer.style.display = 'block';
 
+                    // Cancella eventuale timer precedente
                     if (playerIframe._nextFilmTimer) clearTimeout(playerIframe._nextFilmTimer);
 
+                    // Timer che scatta alla fine del film per caricare il successivo
                     const msAllaFine = (filmInOnda.fineMin - minutiAdesso) * 60 * 1000;
                     playerIframe._nextFilmTimer = setTimeout(() => {
                         playerIframe.dataset.currentFilm = '';
@@ -896,6 +816,7 @@
                     }, msAllaFine);
                 }
 
+                // Aggiorna testi banner
                 document.getElementById('player-banner-titolo').textContent = filmInOnda.titolo;
                 document.getElementById('player-banner-orario').textContent =
                     `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFine}`;
@@ -903,6 +824,7 @@
                     `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFine}`;
                 document.getElementById('player-banner-btn').href = link;
 
+                // Messaggio minuti trascorsi
                 const minutiTrascorsi = minutiAdesso - filmInOnda.inizioMin;
                 let skipMsg = document.getElementById('skip-message');
                 if (!skipMsg) {
@@ -917,7 +839,8 @@
                     const tempoTrascorso = ore > 0
                         ? `${ore}h ${minuti > 0 ? minuti + 'm' : ''}`.trim()
                         : `${minuti} minut${minuti === 1 ? 'o' : 'i'}`;
-                    skipMsg.textContent = `⏱️ Il film è già iniziato da ${tempoTrascorso}, vai avanti manualmente nella barra del player.`;
+                    skipMsg.
+                                    skipMsg.textContent = `⏱️ Il film è già iniziato da ${tempoTrascorso}, vai avanti manualmente nella barra del player.`;
                 } else {
                     skipMsg.textContent = '';
                 }
