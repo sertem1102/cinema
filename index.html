@@ -256,7 +256,6 @@
         }
         loadMovies();
         caricaPalinsesto();
-        popolaSelectFilm();
     });
 
     window.loginAdmin = function () {
@@ -275,21 +274,67 @@
 
     // ===== FILM DATABASE =====
     function loadMovies() {
+        // Ascoltiamo il nodo sicuro 'movies'
         db.ref('movies').on('value', (snapshot) => {
-            allMovies = [];
             const data = snapshot.val();
             if (data) {
-                if (Array.isArray(data)) {
-                    allMovies = data.filter(m => m !== null && m !== undefined && m.title);
-                } else if (typeof data === 'object') {
-                    allMovies = Object.values(data).filter(m => m !== null && m !== undefined && m.title);
-                }
+                // Il nodo nuovo esiste ed è popolato
+                parseAndDisplayMovies(data);
+            } else {
+                // Il nodo nuovo è vuoto: andiamo a recuperare i vecchi film salvati alla radice '/'
+                db.ref('/').once('value').then((rootSnapshot) => {
+                    const rootData = rootSnapshot.val();
+                    if (rootData) {
+                        let raw = [];
+                        if (Array.isArray(rootData)) {
+                            raw = rootData;
+                        } else if (typeof rootData === 'object') {
+                            raw = Object.entries(rootData)
+                                .filter(([key]) => key !== 'palinsesto' && key !== 'movies')
+                                .map(([, val]) => val);
+                        }
+                        allMovies = raw.filter(m => m !== null && m !== undefined && m.title);
+                        
+                        if (allMovies.length > 0) {
+                            console.log("Rilevati " + allMovies.length + " film alla radice. Migrazione automatica in corso...");
+                            displayMovies(allMovies);
+                            
+                            // Se siamo loggati come admin, eseguiamo lo spostamento definitivo e la pulizia della radice
+                            if (isAdmin) {
+                                db.ref('movies').set(allMovies).then(() => {
+                                    const updates = {};
+                                    Object.keys(rootData).forEach(key => {
+                                        if (key !== 'palinsesto' && key !== 'movies' && !isNaN(key)) {
+                                            updates[key] = null; // Elimina i vecchi indici numerici duplicati
+                                        }
+                                    });
+                                    db.ref('/').update(updates);
+                                });
+                            }
+                        } else {
+                            displayMovies([]);
+                        }
+                    } else {
+                        displayMovies([]);
+                    }
+                });
             }
-            displayMovies(allMovies);
         }, (error) => {
             console.error("Errore Firebase in lettura:", error);
-            document.getElementById('movie-list').innerHTML = `<p class="no-results" style="color: #e94560;">Errore di caricamento: ${error.message}<br>Verifica le regole di lettura sul pannello Firebase.</p>`;
+            document.getElementById('movie-list').innerHTML = `<p class="no-results" style="color: #e94560;">Errore di caricamento: ${error.message}</p>`;
         });
+    }
+
+    function parseAndDisplayMovies(data) {
+        allMovies = [];
+        if (data) {
+            if (Array.isArray(data)) {
+                allMovies = data.filter(m => m !== null && m !== undefined && m.title);
+            } else if (typeof data === 'object') {
+                allMovies = Object.values(data).filter(m => m !== null && m !== undefined && m.title);
+            }
+        }
+        displayMovies(allMovies);
     }
 
     function saveMovies(movies) {
@@ -374,6 +419,9 @@
 
         document.querySelectorAll('.delete-btn').forEach(b => b.onclick = () => deleteMovie(b.dataset.id));
         document.querySelectorAll('.edit-btn').forEach(b => b.onclick = () => openEditModal(b.dataset.id));
+        
+        // Aggiorna dinamicamente il menu a tendina del palinsesto ogni volta che carichi/cambi la lista film
+        popolaSelectFilm();
     }
 
     async function searchMovies() {
@@ -537,7 +585,7 @@
         document.getElementById('palinsesto-form').style.display = isAdmin ? 'block' : 'none';
 
         const ref = firebase.database().ref(`palinsesto/${chiave}`);
-        ref.once('value', snapshot => {
+        ref.on('value', snapshot => {
             const tbody = document.getElementById('palinsesto-body');
             tbody.innerHTML = '';
 
@@ -597,31 +645,22 @@
     }
 
     function popolaSelectFilm() {
-        firebase.database().ref('movies').once('value', snapshot => {
-            const select = document.getElementById('film-select');
-            select.innerHTML = '<option value="">-- Scegli un film --</option>';
-            const data = snapshot.val();
-            if (!data) return;
+        const select = document.getElementById('film-select');
+        if (!select) return;
+        select.innerHTML = '<option value="">-- Scegli un film --</option>';
 
-            let raw = [];
-            if (Array.isArray(data)) {
-                raw = data;
-            } else if (typeof data === 'object') {
-                raw = Object.values(data);
-            }
-            const films = raw.filter(m => m !== null && m !== undefined && m.title);
-            films.sort((a, b) => a.title.localeCompare(b.title));
+        const films = [...allMovies];
+        films.sort((a, b) => a.title.localeCompare(b.title));
 
-            films.forEach(film => {
-                const opt = document.createElement('option');
-                opt.value = JSON.stringify({
-                    titolo: film.title,
-                    tmdbId: film.id || null,
-                    filmLink: film.filmLink || null
-                });
-                opt.textContent = film.title;
-                select.appendChild(opt);
+        films.forEach(film => {
+            const opt = document.createElement('option');
+            opt.value = JSON.stringify({
+                titolo: film.title,
+                tmdbId: film.id || null,
+                filmLink: film.filmLink || null
             });
+            opt.textContent = film.title;
+            select.appendChild(opt);
         });
     }
 
@@ -727,7 +766,7 @@
             if (filmInOnda) {
                 const durata = filmInOnda.fineMin - filmInOnda.inizioMin;
                 const trascorso = minutiAdesso - filmInOnda.inizioMin;
-                const percentuale = Math.min(Math.round((trascorso / duration) * 100), 100);
+                const percentuale = Math.min(Math.round((trascorso / durata) * 100), 100);
 
                 const hFine = Math.floor(filmInOnda.fineMin / 60) % 24;
                 const mFine = filmInOnda.fineMin % 60;
