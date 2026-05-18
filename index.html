@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Il Mio Database di Film (v7.5 - Cloud Firebase)</title>
+    <title>Il Mio Database di Film (v7.6 - Cloud Firebase)</title>
 
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
@@ -225,8 +225,8 @@
     const db = firebase.database();
     const auth = firebase.auth();
 
-    const API_KEY = '4d5149e0894f071e682f4fc0401624a4';
-    const TMDB_API_KEY = '4d5149e0894f071e682f4fc0401624a4';
+    const API_KEY = '4d5149e0894f071e682f4fc0401624a4'; // ⚠️ Nota: questa chiave è visibile nel sorgente pubblico
+    // TMDB_API_KEY rimossa: era duplicata di API_KEY
     const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
     const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
     const ADMIN_UID = 'fvY3JO6X0ec9U9A7t5AzHRJwJp42';
@@ -521,7 +521,7 @@
 
     async function getDurataFilm(tmdbId) {
         try {
-            const res = await fetch(`${TMDB_BASE_URL}/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=it-IT`);
+            const res = await fetch(`${TMDB_BASE_URL}/movie/${tmdbId}?api_key=${API_KEY}&language=it-IT`);
             const data = await res.json();
             return data.runtime || 90;
         } catch {
@@ -716,7 +716,7 @@
                 const inizioMin = h * 60 + m;
                 const fineMin = inizioMin + (voci[i].durata || 90);
                 if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
-                    if (!filmInOnda || inizioMin > filmInOnda.inizioMin) {
+                    if (!filmInOnda || inizioMin < filmInOnda.inizioMin) { // FIX: < invece di >
                         filmInOnda = { ...voci[i], inizioMin, fineMin };
                     }
                 }
@@ -774,7 +774,7 @@
                 const inizioMin = h * 60 + m;
                 const fineMin = inizioMin + (voci[i].durata || 90);
                 if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
-                    if (!filmInOnda || inizioMin > filmInOnda.inizioMin) {
+                    if (!filmInOnda || inizioMin < filmInOnda.inizioMin) { // FIX: < invece di >
                         filmInOnda = { ...voci[i], inizioMin, fineMin };
                         prossimoFilm = voci[i + 1] || null;
                     }
