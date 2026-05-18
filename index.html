@@ -566,7 +566,12 @@
             voci.sort((a, b) => a.orario.localeCompare(b.orario));
 
             const ora = new Date();
+            const chiaveOggi = getChiaveGiorno(ora);
+            const visualizzandoOggi = (chiave === chiaveOggi);
+            
+            // Il pallino rosso appare solo se è oggi o se stiamo simulando questo giorno
             const minutiAdesso = (debugMinuti !== null) ? debugMinuti : ora.getHours() * 60 + ora.getMinutes();
+            const mostraInOnda = visualizzandoOggi || (debugMinuti !== null);
 
             voci.forEach((voce, index) => {
                 const tr = document.createElement('tr');
@@ -580,7 +585,7 @@
                 const mFine = fineMin % 60;
                 const orarioFine = `${String(hFine).padStart(2,'0')}:${String(mFine).padStart(2,'0')}`;
 
-                const inOnda = minutiAdesso >= inizioMin && minutiAdesso < fineMin;
+                const inOnda = mostraInOnda && minutiAdesso >= inizioMin && minutiAdesso < fineMin;
 
                 let sovrapposto = false;
                 if (index > 0) {
