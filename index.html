@@ -68,6 +68,10 @@
         #skip-message { text-align: center; color: #e94560; font-size: 1em; margin: 10px 0; font-weight: bold; }
         .sovrapposizione { background-color: #2a1a0e !important; border-left: 3px solid #f39c12; }
         .sovrapposizione td { color: #f39c12 !important; }
+        #debug-panel { box-sizing: border-box; }
+        .debug-btn { padding: 8px 18px !important; font-size: 0.9em !important; border: none; border-radius: 5px; cursor: pointer; color: white !important; }
+        .debug-btn-sim { background-color: #e94560 !important; }
+        .debug-btn-reset { background-color: #555 !important; margin-left: 8px; }
     </style>
 </head>
 <body>
@@ -78,12 +82,12 @@
         <button id="logout-btn" onclick="logoutAdmin()" style="display:none; background-color: #555;">Esci</button>
     </div>
 
-    <div id="debug-panel" style="display:none; text-align:center; margin-bottom:20px; background:#1a1a2e; border:2px dashed #e94560; border-radius:8px; padding:12px; width:90%; max-width:1200px;">
-        <span style="color:#e94560; font-weight:bold; font-size:0.85em;">&#128295; MODALITA' TEST &mdash; simula orario</span><br><br>
-        <input type="time" id="debug-time-input" style="padding:8px; border-radius:5px; border:1px solid #2e4a81; background:#0a1f3c; color:#e0e0e0; font-size:1em; margin-right:10px;">
-        <button onclick="attivaDebugOrario()" style="padding:8px 18px; font-size:0.95em; background:#e94560;">&#9654; Simula</button>
-        <button onclick="resetDebugOrario()" style="padding:8px 18px; font-size:0.95em; background:#555; margin-left:8px;">&#10006; Reset (orario reale)</button>
-        <span id="debug-orario-attivo" style="display:block; margin-top:8px; color:#f39c12; font-size:0.85em;"></span>
+    <div id="debug-panel" style="display:none; text-align:center; margin-bottom:20px; background:#1a1a2e; border:2px dashed #e94560; border-radius:8px; padding:16px; width:90%; max-width:1200px; box-sizing:border-box;">
+        <span style="color:#e94560; font-weight:bold; font-size:0.85em;">&#128295; MODALITA&#39; TEST &mdash; simula orario</span><br><br>
+        <input type="time" id="debug-time-input" style="padding:8px; border-radius:5px; border:1px solid #2e4a81; background:#0a1f3c; color:#e0e0e0; font-size:1em; margin-right:10px; width:130px;">
+        <button class="debug-btn debug-btn-sim" onclick="attivaDebugOrario()">&#9654; Simula</button>
+        <button class="debug-btn debug-btn-reset" onclick="resetDebugOrario()">&#10006; Reset</button>
+        <span id="debug-orario-attivo" style="display:block; margin-top:10px; color:#f39c12; font-size:0.85em;"></span>
     </div>
 
     <div id="admin-panel" class="container" style="display: none;">
