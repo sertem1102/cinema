@@ -226,24 +226,25 @@
         storageBucket: "cinema-database-b2723.appspot.com",
         messagingSenderId: "493534715462",
         appId: "1:493534715462:web:41ada890b26bc8e8803447",
-        measurementId: "G-2ZR9R741"
+        measurementId: "G-6P2ZR9R741"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const auth = firebase.auth();
 
-    const API_KEY = '4d5149e0894f071e682f4fc0401624a4';
+    const API_KEY = '4d5149e0894f071e682f4fc0401624a4'; // ⚠️ Nota: questa chiave è visibile nel sorgente pubblico
+    // TMDB_API_KEY rimossa: era duplicata di API_KEY
     const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
     const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
-    const ADMIN_UID = 'lRpZl3KaY2UamHBmEwniiqFEOEp2';
+    const ADMIN_UID = 'fvY3JO6X0ec9U9A7t5AzHRJwJp42';
 
     let currentMovieData = null;
     let editingMovieId = null;
     let allMovies = [];
     let giornoVisualizzato = 0;
     let isAdmin = false;
-    let debugMinuti = null;
+    let debugMinuti = null; // null = orario reale; numero = orario simulato per test
 
     // ===== AUTH =====
     auth.onAuthStateChanged((user) => {
@@ -727,6 +728,7 @@
                 const inizioMin = h * 60 + m;
                 const fineMin = inizioMin + (voci[i].durata || 90);
                 if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
+                    // In caso di sovrapposizione, vince il film con orario di inizio più tardo
                     if (!filmInOnda || inizioMin > filmInOnda.inizioMin) {
                         filmInOnda = { ...voci[i], inizioMin, fineMin };
                     }
@@ -785,6 +787,7 @@
                 const inizioMin = h * 60 + m;
                 const fineMin = inizioMin + (voci[i].durata || 90);
                 if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
+                    // In caso di sovrapposizione, vince il film con orario di inizio più tardo
                     if (!filmInOnda || inizioMin > filmInOnda.inizioMin) {
                         filmInOnda = { ...voci[i], inizioMin, fineMin };
                         prossimoFilm = voci[i + 1] || null;
@@ -904,6 +907,7 @@
         aggiornaBannerPlayer();
     };
 
+    // Versioni debug che accettano una chiave giorno esplicita
     async function aggiornaBannerDebug(chiave) {
         try {
             const snapshot = await firebase.database().ref('palinsesto/' + chiave).once('value');
