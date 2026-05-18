@@ -678,17 +678,23 @@
             }
         }
 
-        await firebase.database().ref(`palinsesto/${chiave}`).push({
-            orario: orario,
-            titolo: film.titolo,
-            tmdbId: film.tmdbId || null,
-            durata: durata,
-            filmLink: film.filmLink || null
-        });
-
-        document.getElementById('orario-input').value = '';
-        document.getElementById('film-select').value = '';
-        caricaPalinsesto();
+        console.log('[SALVA] Salvo film:', film.titolo, 'data:', chiave, 'orario:', orario, 'filmLink:', film.filmLink || 'NESSUNO');
+        try {
+            await firebase.database().ref(`palinsesto/${chiave}`).push({
+                orario: orario,
+                titolo: film.titolo,
+                tmdbId: film.tmdbId || null,
+                durata: durata,
+                filmLink: film.filmLink || null
+            });
+            console.log('[SALVA] ✅ Salvato correttamente sotto palinsesto/' + chiave);
+            document.getElementById('orario-input').value = '';
+            document.getElementById('film-select').value = '';
+            caricaPalinsesto();
+        } catch(err) {
+            console.error('[SALVA] ❌ Errore nel salvataggio:', err);
+            alert('⚠️ Errore nel salvataggio del film: ' + err.message);
+        }
     }
 
     window.rimuoviDalPalinsesto = function (chiave, id) {
