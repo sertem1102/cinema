@@ -796,19 +796,21 @@
                 const mFine = filmInOnda.fineMin % 60;
                 const orarioFine = `${String(hFine).padStart(2,'0')}:${String(mFine).padStart(2,'0')}`;
 
-                if (playerIframe.dataset.currentFilm !== filmInOnda.titolo) {
+                // Aggiorna il player solo se il link è cambiato rispetto a quello attualmente in riproduzione
+                if (playerIframe.dataset.currentLink !== link) {
                     playerIframe.src = link;
-                    playerIframe.dataset.currentFilm = filmInOnda.titolo;
+                    playerIframe.dataset.currentLink = link;
                     playerContainer.style.display = 'block';
 
                     if (playerIframe._nextFilmTimer) clearTimeout(playerIframe._nextFilmTimer);
 
                     const msAllaFine = (filmInOnda.fineMin - minutiAdesso) * 60 * 1000;
                     playerIframe._nextFilmTimer = setTimeout(() => {
-                        playerIframe.dataset.currentFilm = '';
+                        playerIframe.dataset.currentLink = '';
                         aggiornaBannerPlayer();
                     }, msAllaFine);
                 }
+                playerContainer.style.display = 'block';
 
                 document.getElementById('player-banner-titolo').textContent = filmInOnda.titolo;
                 document.getElementById('player-banner-orario').textContent = `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFine}`;
@@ -838,7 +840,7 @@
                 banner.style.display = 'none';
                 playerContainer.style.display = 'none';
                 playerIframe.src = '';
-                playerIframe.dataset.currentFilm = '';
+                playerIframe.dataset.currentLink = '';
                 const skipMsg = document.getElementById('skip-message');
                 if (skipMsg) skipMsg.textContent = '';
             }
