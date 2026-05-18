@@ -78,6 +78,14 @@
         <button id="logout-btn" onclick="logoutAdmin()" style="display:none; background-color: #555;">Esci</button>
     </div>
 
+    <div id="debug-panel" style="display:none; text-align:center; margin-bottom:20px; background:#1a1a2e; border:2px dashed #e94560; border-radius:8px; padding:12px; width:90%; max-width:1200px;">
+        <span style="color:#e94560; font-weight:bold; font-size:0.85em;">&#128295; MODALITA' TEST &mdash; simula orario</span><br><br>
+        <input type="time" id="debug-time-input" style="padding:8px; border-radius:5px; border:1px solid #2e4a81; background:#0a1f3c; color:#e0e0e0; font-size:1em; margin-right:10px;">
+        <button onclick="attivaDebugOrario()" style="padding:8px 18px; font-size:0.95em; background:#e94560;">&#9654; Simula</button>
+        <button onclick="resetDebugOrario()" style="padding:8px 18px; font-size:0.95em; background:#555; margin-left:8px;">&#10006; Reset (orario reale)</button>
+        <span id="debug-orario-attivo" style="display:block; margin-top:8px; color:#f39c12; font-size:0.85em;"></span>
+    </div>
+
     <div id="admin-panel" class="container" style="display: none;">
         <h2>Aggiungi un Film da TMDB</h2>
         <label for="tmdb-search">Cerca Film (Titolo o ID TMDB):</label>
@@ -236,6 +244,7 @@
     let allMovies = [];
     let giornoVisualizzato = 0;
     let isAdmin = false;
+    let debugMinuti = null; // null = orario reale; numero = orario simulato per test
 
     // ===== AUTH =====
     auth.onAuthStateChanged((user) => {
@@ -248,11 +257,14 @@
             adminPanel.style.display = 'block';
             loginBtn.style.display = 'none';
             logoutBtn.style.display = 'inline-block';
+            document.getElementById('debug-panel').style.display = 'block';
         } else {
             isAdmin = false;
             adminPanel.style.display = 'none';
             loginBtn.style.display = 'inline-block';
             logoutBtn.style.display = 'none';
+            document.getElementById('debug-panel').style.display = 'none';
+            resetDebugOrario && resetDebugOrario();
         }
         loadMovies();
         caricaPalinsesto();
@@ -671,8 +683,7 @@
             titolo: film.titolo,
             tmdbId: film.tmdbId || null,
             durata: durata,
-            filmLink: film.filmLink || null,
-            addedAt: Date.now()
+            filmLink: film.filmLink || null
         });
 
         document.getElementById('orario-input').value = '';
@@ -709,7 +720,7 @@
             snapshot.forEach(child => voci.push({ id: child.key, ...child.val() }));
             voci.sort((a, b) => a.orario.localeCompare(b.orario));
 
-            const minutiAdesso = oggi.getHours() * 60 + oggi.getMinutes();
+            const minutiAdesso = (debugMinuti !== null) ? debugMinuti : oggi.getHours() * 60 + oggi.getMinutes();
             let filmInOnda = null;
 
             for (let i = 0; i < voci.length; i++) {
@@ -717,10 +728,8 @@
                 const inizioMin = h * 60 + m;
                 const fineMin = inizioMin + (voci[i].durata || 90);
                 if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
-                    // In caso di sovrapposizione, vince l'ultimo aggiunto (addedAt più recente, fallback sull'id)
-                    const candidatoTs = voci[i].addedAt || 0;
-                    const attualeTs = filmInOnda ? (filmInOnda.addedAt || 0) : -1;
-                    if (!filmInOnda || candidatoTs > attualeTs) {
+                    // In caso di sovrapposizione, vince il film con orario di inizio più tardo
+                    if (!filmInOnda || inizioMin > filmInOnda.inizioMin) {
                         filmInOnda = { ...voci[i], inizioMin, fineMin };
                     }
                 }
@@ -769,7 +778,7 @@
             snapshot.forEach(child => voci.push({ id: child.key, ...child.val() }));
             voci.sort((a, b) => a.orario.localeCompare(b.orario));
 
-            const minutiAdesso = oggi.getHours() * 60 + oggi.getMinutes();
+            const minutiAdesso = (debugMinuti !== null) ? debugMinuti : oggi.getHours() * 60 + oggi.getMinutes();
             let filmInOnda = null;
             let prossimoFilm = null;
 
@@ -778,10 +787,8 @@
                 const inizioMin = h * 60 + m;
                 const fineMin = inizioMin + (voci[i].durata || 90);
                 if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
-                    // In caso di sovrapposizione, vince l'ultimo aggiunto (addedAt più recente, fallback sull'id)
-                    const candidatoTs = voci[i].addedAt || 0;
-                    const attualeTs = filmInOnda ? (filmInOnda.addedAt || 0) : -1;
-                    if (!filmInOnda || candidatoTs > attualeTs) {
+                    // In caso di sovrapposizione, vince il film con orario di inizio più tardo
+                    if (!filmInOnda || inizioMin > filmInOnda.inizioMin) {
                         filmInOnda = { ...voci[i], inizioMin, fineMin };
                         prossimoFilm = voci[i + 1] || null;
                     }
@@ -854,6 +861,25 @@
             console.log('Errore banner player:', err);
         }
     }
+
+    // ===== DEBUG ORARIO (solo admin) =====
+    window.attivaDebugOrario = function () {
+        const val = document.getElementById('debug-time-input').value;
+        if (!val) { alert('Inserisci un orario!'); return; }
+        const [h, m] = val.split(':').map(Number);
+        debugMinuti = h * 60 + m;
+        document.getElementById('debug-orario-attivo').textContent = 'Orario simulato: ' + val + ' — i banner e il player si aggiorneranno come se fossero le ' + val;
+        aggiornaBanner();
+        aggiornaBannerPlayer();
+    };
+
+    window.resetDebugOrario = function () {
+        debugMinuti = null;
+        document.getElementById('debug-time-input').value = '';
+        document.getElementById('debug-orario-attivo').textContent = '';
+        aggiornaBanner();
+        aggiornaBannerPlayer();
+    };
 
     // ===== AVVIO =====
     aggiornaBanner();
