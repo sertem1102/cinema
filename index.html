@@ -762,9 +762,7 @@
     // ===== BANNER PLAYER =====
     async function aggiornaBannerPlayer() {
         const oggi = new Date();
-        const chiave = (debugMinuti !== null)
-            ? getChiaveGiorno(getDataGiorno(giornoVisualizzato))
-            : getChiaveGiorno(oggi);
+        const chiave = getChiaveGiorno(oggi);
 
         try {
             const snapshot = await firebase.database().ref(`palinsesto/${chiave}`).once('value');
@@ -802,6 +800,7 @@
             const playerIframe = document.getElementById('player-iframe');
 
             if (debugMinuti !== null) {
+                console.log('[DEBUG] chiave:', chiave, 'debugMinuti:', debugMinuti, 'voci:', voci.map(v => v.orario + ' ' + v.titolo), 'filmInOnda:', filmInOnda ? filmInOnda.titolo : null);
                 const debugEl = document.getElementById('debug-orario-attivo');
                 if (filmInOnda) {
                     debugEl.textContent = `▶ Simulo ${String(Math.floor(debugMinuti/60)).padStart(2,'0')}:${String(debugMinuti%60).padStart(2,'0')} → In onda: "${filmInOnda.titolo}" ${filmInOnda.filmLink ? '✅ ha link' : '⚠️ nessun link (video non riproducibile)'}`;
@@ -833,10 +832,14 @@
                     }
 
                     const fineMinCapture = filmInOnda.fineMin;
+                    const prossimoInizioCapture = prossimoFilm ? (() => {
+                        const [ph, pm] = prossimoFilm.orario.split(':').map(Number);
+                        return ph * 60 + pm;
+                    })() : null;
                     playerIframe._nextFilmTimer = setTimeout(() => {
                         playerIframe.dataset.currentLink = '';
                         if (debugMinuti !== null) {
-                            debugMinuti = fineMinCapture;
+                            debugMinuti = (prossimoInizioCapture !== null) ? prossimoInizioCapture : fineMinCapture;
                         }
                         aggiornaBannerPlayer();
                     }, msAllaFine);
