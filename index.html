@@ -801,6 +801,15 @@
             const playerContainer = document.getElementById('player-container');
             const playerIframe = document.getElementById('player-iframe');
 
+            if (debugMinuti !== null) {
+                const debugEl = document.getElementById('debug-orario-attivo');
+                if (filmInOnda) {
+                    debugEl.textContent = `▶ Simulo ${String(Math.floor(debugMinuti/60)).padStart(2,'0')}:${String(debugMinuti%60).padStart(2,'0')} → In onda: "${filmInOnda.titolo}" ${filmInOnda.filmLink ? '✅ ha link' : '⚠️ nessun link (video non riproducibile)'}`;
+                } else {
+                    debugEl.textContent = `⏸ Simulo ${String(Math.floor(debugMinuti/60)).padStart(2,'0')}:${String(debugMinuti%60).padStart(2,'0')} → Nessun film in onda a quest'orario`;
+                }
+            }
+
             if (filmInOnda) {
                 let link = filmInOnda.filmLink || null;
                 if (link && link.includes('mixdrop.co/f/'))  link = link.replace('mixdrop.co/f/', 'mixdrop.co/e/');
