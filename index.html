@@ -78,14 +78,6 @@
         <button id="logout-btn" onclick="logoutAdmin()" style="display:none; background-color: #555;">Esci</button>
     </div>
 
-    <div id="debug-panel" style="display:block; text-align:center; margin-bottom:20px; background:#1a1a2e; border:2px dashed #e94560; border-radius:8px; padding:12px; width:90%; max-width:1200px;">
-        <span style="color:#e94560; font-weight:bold; font-size:0.85em;">&#128295; MODALITA' TEST &mdash; simula orario</span><br><br>
-        <input type="time" id="debug-time-input" style="padding:8px; border-radius:5px; border:1px solid #2e4a81; background:#0a1f3c; color:#e0e0e0; font-size:1em; margin-right:10px;">
-        <button onclick="attivaDebugOrario()" style="padding:8px 18px; font-size:0.95em; background:#e94560;">&#9654; Simula</button>
-        <button onclick="resetDebugOrario()" style="padding:8px 18px; font-size:0.95em; background:#555; margin-left:8px;">&#10006; Reset (orario reale)</button>
-        <span id="debug-orario-attivo" style="display:block; margin-top:8px; color:#f39c12; font-size:0.85em;"></span>
-    </div>
-
     <div id="admin-panel" class="container" style="display: none;">
         <h2>Aggiungi un Film da TMDB</h2>
         <label for="tmdb-search">Cerca Film (Titolo o ID TMDB):</label>
@@ -190,6 +182,14 @@
             </select>
             <button onclick="aggiungiAlPalinsesto()">Aggiungi</button>
         </div>
+    </div>
+
+    <div id="debug-panel" style="display:block; text-align:center; margin-top:40px; margin-bottom:20px; background:#1a1a2e; border:2px dashed #e94560; border-radius:8px; padding:12px; width:90%; max-width:1200px; margin-left:auto; margin-right:auto;">
+        <span style="color:#e94560; font-weight:bold; font-size:0.85em;">&#128295; MODALITA' TEST &mdash; simula orario</span><br><br>
+        <input type="time" id="debug-time-input" style="padding:8px; border-radius:5px; border:1px solid #2e4a81; background:#0a1f3c; color:#e0e0e0; font-size:1em; margin-right:10px;">
+        <button onclick="attivaDebugOrario()" style="padding:8px 18px; font-size:0.95em; background:#e94560;">&#9654; Simula</button>
+        <button onclick="resetDebugOrario()" style="padding:8px 18px; font-size:0.95em; background:#555; margin-left:8px;">&#10006; Reset (orario reale)</button>
+        <span id="debug-orario-attivo" style="display:block; margin-top:8px; color:#f39c12; font-size:0.85em;"></span>
     </div>
 
     <div id="edit-modal" class="modal">
