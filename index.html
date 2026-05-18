@@ -773,22 +773,24 @@
     }
 
     // ===== BANNER PLAYER =====
+    // ===== BANNER PLAYER =====
     async function aggiornaBannerPlayer() {
         const myGen = ++_playerGen;
         const oggi = new Date();
         const chiave = (debugMinuti !== null) ? getChiaveGiorno(getDataGiorno(giornoVisualizzato)) : getChiaveGiorno(oggi);
-        console.log('[PLAYER] chiamata gen=' + myGen + ' — chiave=' + chiave + ' ore=' + oggi.getHours() + ':' + String(oggi.getMinutes()).padStart(2,'0') + ':' + String(oggi.getSeconds()).padStart(2,'0'));
+        const orarioLog = oggi.getHours() + ':' + String(oggi.getMinutes()).padStart(2,'0') + ':' + String(oggi.getSeconds()).padStart(2,'0');
+        
+        console.log(`[PLAYER] gen=${myGen} | chiave=${chiave} | ora_reale=${orarioLog}`);
 
         try {
             const snapshot = await firebase.database().ref(`palinsesto/${chiave}`).once('value');
-            if (myGen !== _playerGen) { console.log('[PLAYER] gen=' + myGen + ' obsoleta, annullata'); return; }
-            console.log('[PLAYER] snapshot.exists=' + snapshot.exists());
+            if (myGen !== _playerGen) return;
 
             if (!snapshot.exists()) {
                 document.getElementById('player-banner').style.display = 'none';
                 document.getElementById('player-container').style.display = 'none';
                 document.getElementById('player-iframe').src = '';
-                console.log('[PLAYER] nessun palinsesto per', chiave, '— player nascosto');
+                console.log('[PLAYER] Nessun palinsesto per oggi.');
                 return;
             }
 
@@ -797,7 +799,8 @@
             voci.sort((a, b) => a.orario.localeCompare(b.orario));
 
             const minutiAdesso = (debugMinuti !== null) ? debugMinuti : oggi.getHours() * 60 + oggi.getMinutes();
-            console.log('[PLAYER] minutiAdesso=' + minutiAdesso + ' num_film=' + voci.length + ' orari=' + voci.map(v => v.orario).join(','));
+            console.log(`[PLAYER] minutiAdesso=${minutiAdesso} (${Math.floor(minutiAdesso/60)}:${String(minutiAdesso%60).padStart(2,'0')})`);
+            
             let filmInOnda = null;
             let prossimoFilm = null;
 
@@ -807,117 +810,76 @@
                 const fineMin = inizioMin + (voci[i].durata || 90);
                 
                 if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
-                    filmInOnda = { ...voci[i], inizioMin, fineMin };
+                    filmInOnda = { ...voci[i], id: voci[i].id, inizioMin, fineMin };
                     prossimoFilm = voci[i + 1] || null;
                     break;
                 } else if (inizioMin > minutiAdesso) {
-                    prossimoFilm = { ...voci[i], inizioMin, fineMin };
+                    prossimoFilm = { ...voci[i], id: voci[i].id, inizioMin, fineMin };
                     break;
                 }
             }
 
-            console.log('[PLAYER] filmInOnda=' + (filmInOnda ? '"' + filmInOnda.titolo + '"' : 'NESSUNO') + ' prossimo=' + (prossimoFilm ? '"' + prossimoFilm.titolo + '"' : 'NESSUNO'));
+            console.log('[PLAYER] filmInOnda:', filmInOnda ? filmInOnda.titolo : 'NESSUNO');
+            console.log('[PLAYER] prossimoFilm:', prossimoFilm ? prossimoFilm.titolo : 'NESSUNO');
 
             const banner = document.getElementById('player-banner');
             const playerContainer = document.getElementById('player-container');
             const playerIframe = document.getElementById('player-iframe');
 
-            // Gestione Timer di Passaggio
             if (playerIframe._nextFilmTimer) clearTimeout(playerIframe._nextFilmTimer);
 
             let targetMin = null;
             if (filmInOnda) {
-                // Se c'è un film, puntiamo alla fine o all'inizio del prossimo
                 const [ph, pm] = prossimoFilm ? prossimoFilm.orario.split(':').map(Number) : [null, null];
                 const prossimoInizio = prossimoFilm ? ph * 60 + pm : null;
-                targetMin = (prossimoInizio !== null) ? prossimoInizio : filmInOnda.fineMin;
+                targetMin = (prossimoInizio !== null && prossimoInizio < filmInOnda.fineMin) ? prossimoInizio : filmInOnda.fineMin;
             } else if (prossimoFilm) {
-                // Se non c'è nulla in onda ma c'è un film dopo, puntiamo all'inizio del prossimo
                 targetMin = prossimoFilm.inizioMin;
             }
 
             if (targetMin !== null) {
                 let msAttesa;
                 if (debugMinuti !== null) {
-                    msAttesa = 10000; // 10 secondi in debug
+                    msAttesa = 20000; 
                 } else {
                     const nowTs = new Date();
                     const secsNow = nowTs.getHours() * 3600 + nowTs.getMinutes() * 60 + nowTs.getSeconds();
                     msAttesa = Math.max(5000, (targetMin * 60 - secsNow) * 1000);
                 }
 
+                console.log(`[PLAYER] Prossimo check tra ${Math.round(msAttesa/1000)}s (al minuto ${targetMin})`);
                 playerIframe._nextFilmTimer = setTimeout(() => {
-                    playerIframe.dataset.currentLink = '';
-                    if (debugMinuti !== null) {
-                        debugMinuti = targetMin;
-                    }
-                    console.log('[PLAYER] Timer scaduto, vado a:', targetMin);
+                    if (debugMinuti !== null) debugMinuti = targetMin;
+                    console.log('[PLAYER] Timer scaduto, aggiorno...');
                     aggiornaBannerPlayer();
                 }, msAttesa);
             }
 
-            if (filmInOnda) {
-                let link = filmInOnda.filmLink || null;
-                if (link && link.includes('mixdrop.co/f/'))  link = link.replace('mixdrop.co/f/', 'mixdrop.co/e/');
-                if (link && link.includes('mixdrop.top/f/')) link = link.replace('mixdrop.top/f/', 'mixdrop.top/e/');
+            if (filmInOnda && filmInOnda.filmLink) {
+                let link = filmInOnda.filmLink;
+                if (link.includes('mixdrop.co/f/'))  link = link.replace('mixdrop.co/f/', 'mixdrop.co/e/');
+                if (link.includes('mixdrop.top/f/')) link = link.replace('mixdrop.top/f/', 'mixdrop.top/e/');
 
-                const filmKey = link || ('__nolink__' + filmInOnda.orario + filmInOnda.titolo);
+                const filmKey = link + '_' + filmInOnda.id;
 
                 if (playerIframe.dataset.currentLink !== filmKey) {
+                    console.log('[PLAYER] Caricamento nuovo film:', filmInOnda.titolo);
                     playerIframe.dataset.currentLink = filmKey;
-
-                    if (link) {
-                        playerIframe.src = link;
-                        playerContainer.style.display = 'block';
-                    } else {
-                        playerIframe.src = '';
-                        playerContainer.style.display = 'none';
-                    }
-                } else if (link) {
+                    playerIframe.src = link;
                     playerContainer.style.display = 'block';
                 }
 
-                if (link) {
-                    const hFine = Math.floor(filmInOnda.fineMin / 60) % 24;
-                    const mFine = filmInOnda.fineMin % 60;
-                    const orarioFine = `${String(hFine).padStart(2,'0')}:${String(mFine).padStart(2,'0')}`;
+                const hFine = Math.floor(filmInOnda.fineMin / 60) % 24;
+                const mFine = filmInOnda.fineMin % 60;
+                const orarioFine = `${String(hFine).padStart(2,'0')}:${String(mFine).padStart(2,'0')}`;
 
-                    document.getElementById('player-banner-titolo').textContent = filmInOnda.titolo;
-                    document.getElementById('player-banner-orario').textContent = `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFine}`;
-                    document.getElementById('player-banner-btn').href = link;
+                document.getElementById('player-banner-titolo').textContent = filmInOnda.titolo;
+                document.getElementById('player-banner-orario').textContent = `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFine}`;
+                document.getElementById('player-banner-btn').href = link;
+                document.getElementById('player-banner-prossimo').textContent = prossimoFilm ? `⏭️ Prossimamente ore ${prossimoFilm.orario}: ${prossimoFilm.titolo}` : '';
+                banner.style.display = 'block';
 
-                    const minutiTrascorsi = minutiAdesso - filmInOnda.inizioMin;
-                    let skipMsg = document.getElementById('skip-message');
-                    if (!skipMsg) {
-                        skipMsg = document.createElement('p');
-                        skipMsg.id = 'skip-message';
-                        skipMsg.style.cssText = 'text-align:center; color:#e94560; font-size:1em; margin:10px 0; font-weight:bold;';
-                        playerContainer.insertAdjacentElement('afterend', skipMsg);
-                    }
-                    if (minutiTrascorsi > 0) {
-                        const ore = Math.floor(minutiTrascorsi / 60);
-                        const minuti = minutiTrascorsi % 60;
-                        const tempoTrascorso = ore > 0 ? `${ore}h ${minuti > 0 ? minuti + 'm' : ''}`.trim() : `${minuti} minut${minuti === 1 ? 'o' : 'i'}`;
-                        skipMsg.textContent = `⏱️ Il film è già iniziato da ${tempoTrascorso}, vai avanti manualmente nella barra del player.`;
-                    } else {
-                        skipMsg.textContent = '';
-                    }
-
-                    document.getElementById('player-banner-prossimo').textContent = prossimoFilm ? `⏭️ Prossimamente ore ${prossimoFilm.orario}: ${prossimoFilm.titolo}` : '';
-                    banner.style.display = 'block';
-                } else {
-                    banner.style.display = 'none';
-                    const skipMsg = document.getElementById('skip-message');
-                    if (skipMsg) skipMsg.textContent = '';
-                }
-
-            } else {
-                // NESSUN FILM IN ONDA ORA
-                banner.style.display = 'none';
-                playerContainer.style.display = 'none';
-                playerIframe.src = '';
-                playerIframe.dataset.currentLink = '';
-
+                const minutiTrascorsi = minutiAdesso - filmInOnda.inizioMin;
                 let skipMsg = document.getElementById('skip-message');
                 if (!skipMsg) {
                     skipMsg = document.createElement('p');
@@ -925,13 +887,27 @@
                     skipMsg.style.cssText = 'text-align:center; color:#e94560; font-size:1em; margin:10px 0; font-weight:bold;';
                     playerContainer.insertAdjacentElement('afterend', skipMsg);
                 }
-                if (prossimoFilm) {
-                    skipMsg.textContent = `⏳ In attesa del prossimo film: "${prossimoFilm.titolo}" alle ore ${prossimoFilm.orario}`;
+                if (minutiTrascorsi > 0) {
+                    const ore = Math.floor(minutiTrascorsi / 60);
+                    const minuti = minutiTrascorsi % 60;
+                    const tempoTrascorso = ore > 0 ? `${ore}h ${minuti > 0 ? minuti + 'm' : ''}`.trim() : `${minuti} minut${minuti === 1 ? 'o' : 'i'}`;
+                    skipMsg.textContent = `⏱️ Il film è già iniziato da ${tempoTrascorso}, vai avanti manualmente nel player.`;
                 } else {
-                    skipMsg.textContent = '📽️ Nessun film programmato per le prossime ore.';
+                    skipMsg.textContent = '';
+                }
+            } else {
+                console.log('[PLAYER] Nessun film in onda o link mancante.');
+                banner.style.display = 'none';
+                playerContainer.style.display = 'none';
+                playerIframe.src = '';
+                playerIframe.dataset.currentLink = '';
+                
+                let skipMsg = document.getElementById('skip-message');
+                if (skipMsg) {
+                    if (prossimoFilm) skipMsg.textContent = `⏳ In attesa del prossimo film: "${prossimoFilm.titolo}" alle ore ${prossimoFilm.orario}`;
+                    else skipMsg.textContent = '📽️ Nessun film programmato per le prossime ore.';
                 }
             }
-
         } catch (err) {
             console.error('[PLAYER] ERRORE:', err);
         }
@@ -944,15 +920,19 @@
         const [h, m] = val.split(':').map(Number);
         debugMinuti = h * 60 + m;
         _playerGen++;
+        
         const dataUsata = getDataGiorno(giornoVisualizzato);
         const chiaveUsata = getChiaveGiorno(dataUsata);
         const labelGiorno = formatDataLabel(dataUsata);
-        document.getElementById('debug-orario-attivo').textContent =
-            'Simulo le ' + val + ' di ' + labelGiorno + ' — avanzamento automatico ogni 10s';
-        aggiornaBannerDebug(chiaveUsata);
+        
+        document.getElementById('debug-orario-attivo').textContent = 
+            'Simulo le ' + val + ' di ' + labelGiorno + ' — il tempo avanza ad ogni cambio di film';
+            
         const playerIframe = document.getElementById('player-iframe');
         playerIframe.dataset.currentLink = '';
         if (playerIframe._nextFilmTimer) clearTimeout(playerIframe._nextFilmTimer);
+        
+        aggiornaBanner();
         aggiornaBannerPlayer();
     };
 
@@ -967,102 +947,6 @@
         aggiornaBanner();
         aggiornaBannerPlayer();
     };
-
-    // Versioni debug che accettano una chiave giorno esplicita
-    async function aggiornaBannerDebug(chiave) {
-        try {
-            const snapshot = await firebase.database().ref('palinsesto/' + chiave).once('value');
-            if (!snapshot.exists()) {
-                document.getElementById('ora-in-onda-banner').style.display = 'none';
-                document.getElementById('debug-orario-attivo').textContent += ' — Nessun film trovato per questo giorno!';
-                return;
-            }
-            const voci = [];
-            snapshot.forEach(child => voci.push({ id: child.key, ...child.val() }));
-            voci.sort((a, b) => a.orario.localeCompare(b.orario));
-            const minutiAdesso = debugMinuti;
-            let filmInOnda = null;
-            for (let i = 0; i < voci.length; i++) {
-                const [h, m] = voci[i].orario.split(':').map(Number);
-                const inizioMin = h * 60 + m;
-                const fineMin = inizioMin + (voci[i].durata || 90);
-                if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
-                    if (!filmInOnda || inizioMin > filmInOnda.inizioMin) {
-                        filmInOnda = { ...voci[i], inizioMin, fineMin };
-                    }
-                }
-            }
-            const banner = document.getElementById('ora-in-onda-banner');
-            if (filmInOnda) {
-                const durata = filmInOnda.fineMin - filmInOnda.inizioMin;
-                const trascorso = minutiAdesso - filmInOnda.inizioMin;
-                const percentuale = Math.min(Math.round((trascorso / durata) * 100), 100);
-                const hFine = Math.floor(filmInOnda.fineMin / 60) % 24;
-                const mFine = filmInOnda.fineMin % 60;
-                const orarioFine = String(hFine).padStart(2,'0') + ':' + String(mFine).padStart(2,'0');
-                document.getElementById('ora-in-onda-titolo').textContent = filmInOnda.titolo;
-                document.getElementById('ora-in-onda-orario').textContent = '🎬 Inizio: ' + filmInOnda.orario + '  |  🏁 Fine: ' + orarioFine;
-                document.getElementById('barra-avanzamento').style.width = percentuale + '%';
-                document.getElementById('barra-percentuale').textContent = percentuale + '%';
-                banner.style.display = 'block';
-            } else {
-                banner.style.display = 'none';
-                document.getElementById('debug-orario-attivo').textContent += ' — Nessun film in onda a quell\'orario.';
-            }
-        } catch(err) { console.log('Errore debug banner:', err); }
-    }
-
-    async function aggiornaBannerPlayerDebug(chiave) {
-        try {
-            const snapshot = await firebase.database().ref('palinsesto/' + chiave).once('value');
-            const banner = document.getElementById('player-banner');
-            const playerContainer = document.getElementById('player-container');
-            const playerIframe = document.getElementById('player-iframe');
-            if (!snapshot.exists()) {
-                banner.style.display = 'none';
-                playerContainer.style.display = 'none';
-                playerIframe.src = '';
-                return;
-            }
-            const voci = [];
-            snapshot.forEach(child => voci.push({ id: child.key, ...child.val() }));
-            voci.sort((a, b) => a.orario.localeCompare(b.orario));
-            const minutiAdesso = debugMinuti;
-            let filmInOnda = null;
-            let prossimoFilm = null;
-            for (let i = 0; i < voci.length; i++) {
-                const [h, m] = voci[i].orario.split(':').map(Number);
-                const inizioMin = h * 60 + m;
-                const fineMin = inizioMin + (voci[i].durata || 90);
-                if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
-                    if (!filmInOnda || inizioMin > filmInOnda.inizioMin) {
-                        filmInOnda = { ...voci[i], inizioMin, fineMin };
-                        prossimoFilm = voci[i + 1] || null;
-                    }
-                }
-            }
-            if (filmInOnda && filmInOnda.filmLink) {
-                let link = filmInOnda.filmLink;
-                if (link.includes('mixdrop.co/f/'))  link = link.replace('mixdrop.co/f/', 'mixdrop.co/e/');
-                if (link.includes('mixdrop.top/f/')) link = link.replace('mixdrop.top/f/', 'mixdrop.top/e/');
-                const hFine = Math.floor(filmInOnda.fineMin / 60) % 24;
-                const mFine = filmInOnda.fineMin % 60;
-                const orarioFine = String(hFine).padStart(2,'0') + ':' + String(mFine).padStart(2,'0');
-                playerIframe.src = link;
-                playerIframe.dataset.currentLink = link;
-                playerContainer.style.display = 'block';
-                document.getElementById('player-banner-titolo').textContent = filmInOnda.titolo;
-                document.getElementById('player-banner-orario').textContent = '🎬 Inizio: ' + filmInOnda.orario + '  |  🏁 Fine: ' + orarioFine;
-                document.getElementById('player-banner-btn').href = link;
-                document.getElementById('player-banner-prossimo').textContent = prossimoFilm ? '⏭️ Prossimamente ore ' + prossimoFilm.orario + ': ' + prossimoFilm.titolo : '';
-                banner.style.display = 'block';
-            } else {
-                banner.style.display = 'none';
-                playerContainer.style.display = 'none';
-                playerIframe.src = '';
-            }
-        } catch(err) { console.log('Errore debug banner player:', err); }
-    }
 
     // ===== AVVIO =====
     aggiornaBanner();
