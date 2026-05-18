@@ -68,10 +68,6 @@
         #skip-message { text-align: center; color: #e94560; font-size: 1em; margin: 10px 0; font-weight: bold; }
         .sovrapposizione { background-color: #2a1a0e !important; border-left: 3px solid #f39c12; }
         .sovrapposizione td { color: #f39c12 !important; }
-        #debug-panel { box-sizing: border-box; }
-        .debug-btn { padding: 8px 18px !important; font-size: 0.9em !important; border: none; border-radius: 5px; cursor: pointer; color: white !important; }
-        .debug-btn-sim { background-color: #e94560 !important; }
-        .debug-btn-reset { background-color: #555 !important; margin-left: 8px; }
     </style>
 </head>
 <body>
@@ -82,12 +78,12 @@
         <button id="logout-btn" onclick="logoutAdmin()" style="display:none; background-color: #555;">Esci</button>
     </div>
 
-    <div id="debug-panel" style="display:none; text-align:center; margin-bottom:20px; background:#1a1a2e; border:2px dashed #e94560; border-radius:8px; padding:16px; width:90%; max-width:1200px; box-sizing:border-box;">
-        <span style="color:#e94560; font-weight:bold; font-size:0.85em;">&#128295; MODALITA&#39; TEST &mdash; simula orario</span><br><br>
-        <input type="time" id="debug-time-input" style="padding:8px; border-radius:5px; border:1px solid #2e4a81; background:#0a1f3c; color:#e0e0e0; font-size:1em; margin-right:10px; width:130px;">
-        <button class="debug-btn debug-btn-sim" onclick="attivaDebugOrario()">&#9654; Simula</button>
-        <button class="debug-btn debug-btn-reset" onclick="resetDebugOrario()">&#10006; Reset</button>
-        <span id="debug-orario-attivo" style="display:block; margin-top:10px; color:#f39c12; font-size:0.85em;"></span>
+    <div id="debug-panel" style="display:block; text-align:center; margin-bottom:20px; background:#1a1a2e; border:2px dashed #e94560; border-radius:8px; padding:12px; width:90%; max-width:1200px;">
+        <span style="color:#e94560; font-weight:bold; font-size:0.85em;">&#128295; MODALITA' TEST &mdash; simula orario</span><br><br>
+        <input type="time" id="debug-time-input" style="padding:8px; border-radius:5px; border:1px solid #2e4a81; background:#0a1f3c; color:#e0e0e0; font-size:1em; margin-right:10px;">
+        <button onclick="attivaDebugOrario()" style="padding:8px 18px; font-size:0.95em; background:#e94560;">&#9654; Simula</button>
+        <button onclick="resetDebugOrario()" style="padding:8px 18px; font-size:0.95em; background:#555; margin-left:8px;">&#10006; Reset (orario reale)</button>
+        <span id="debug-orario-attivo" style="display:block; margin-top:8px; color:#f39c12; font-size:0.85em;"></span>
     </div>
 
     <div id="admin-panel" class="container" style="display: none;">
@@ -872,9 +868,13 @@
         if (!val) { alert('Inserisci un orario!'); return; }
         const [h, m] = val.split(':').map(Number);
         debugMinuti = h * 60 + m;
-        document.getElementById('debug-orario-attivo').textContent = 'Orario simulato: ' + val + ' — i banner e il player si aggiorneranno come se fossero le ' + val;
-        aggiornaBanner();
-        aggiornaBannerPlayer();
+        const dataUsata = getDataGiorno(giornoVisualizzato);
+        const chiaveUsata = getChiaveGiorno(dataUsata);
+        const labelGiorno = formatDataLabel(dataUsata);
+        document.getElementById('debug-orario-attivo').textContent =
+            'Simulo le ' + val + ' di ' + labelGiorno + ' (chiave: ' + chiaveUsata + ')';
+        aggiornaBannerDebug(chiaveUsata);
+        aggiornaBannerPlayerDebug(chiaveUsata);
     };
 
     window.resetDebugOrario = function () {
@@ -884,6 +884,102 @@
         aggiornaBanner();
         aggiornaBannerPlayer();
     };
+
+    // Versioni debug che accettano una chiave giorno esplicita
+    async function aggiornaBannerDebug(chiave) {
+        try {
+            const snapshot = await firebase.database().ref('palinsesto/' + chiave).once('value');
+            if (!snapshot.exists()) {
+                document.getElementById('ora-in-onda-banner').style.display = 'none';
+                document.getElementById('debug-orario-attivo').textContent += ' — Nessun film trovato per questo giorno!';
+                return;
+            }
+            const voci = [];
+            snapshot.forEach(child => voci.push({ id: child.key, ...child.val() }));
+            voci.sort((a, b) => a.orario.localeCompare(b.orario));
+            const minutiAdesso = debugMinuti;
+            let filmInOnda = null;
+            for (let i = 0; i < voci.length; i++) {
+                const [h, m] = voci[i].orario.split(':').map(Number);
+                const inizioMin = h * 60 + m;
+                const fineMin = inizioMin + (voci[i].durata || 90);
+                if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
+                    if (!filmInOnda || inizioMin > filmInOnda.inizioMin) {
+                        filmInOnda = { ...voci[i], inizioMin, fineMin };
+                    }
+                }
+            }
+            const banner = document.getElementById('ora-in-onda-banner');
+            if (filmInOnda) {
+                const durata = filmInOnda.fineMin - filmInOnda.inizioMin;
+                const trascorso = minutiAdesso - filmInOnda.inizioMin;
+                const percentuale = Math.min(Math.round((trascorso / durata) * 100), 100);
+                const hFine = Math.floor(filmInOnda.fineMin / 60) % 24;
+                const mFine = filmInOnda.fineMin % 60;
+                const orarioFine = String(hFine).padStart(2,'0') + ':' + String(mFine).padStart(2,'0');
+                document.getElementById('ora-in-onda-titolo').textContent = filmInOnda.titolo;
+                document.getElementById('ora-in-onda-orario').textContent = '🎬 Inizio: ' + filmInOnda.orario + '  |  🏁 Fine: ' + orarioFine;
+                document.getElementById('barra-avanzamento').style.width = percentuale + '%';
+                document.getElementById('barra-percentuale').textContent = percentuale + '%';
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+                document.getElementById('debug-orario-attivo').textContent += ' — Nessun film in onda a quell\'orario.';
+            }
+        } catch(err) { console.log('Errore debug banner:', err); }
+    }
+
+    async function aggiornaBannerPlayerDebug(chiave) {
+        try {
+            const snapshot = await firebase.database().ref('palinsesto/' + chiave).once('value');
+            const banner = document.getElementById('player-banner');
+            const playerContainer = document.getElementById('player-container');
+            const playerIframe = document.getElementById('player-iframe');
+            if (!snapshot.exists()) {
+                banner.style.display = 'none';
+                playerContainer.style.display = 'none';
+                playerIframe.src = '';
+                return;
+            }
+            const voci = [];
+            snapshot.forEach(child => voci.push({ id: child.key, ...child.val() }));
+            voci.sort((a, b) => a.orario.localeCompare(b.orario));
+            const minutiAdesso = debugMinuti;
+            let filmInOnda = null;
+            let prossimoFilm = null;
+            for (let i = 0; i < voci.length; i++) {
+                const [h, m] = voci[i].orario.split(':').map(Number);
+                const inizioMin = h * 60 + m;
+                const fineMin = inizioMin + (voci[i].durata || 90);
+                if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
+                    if (!filmInOnda || inizioMin > filmInOnda.inizioMin) {
+                        filmInOnda = { ...voci[i], inizioMin, fineMin };
+                        prossimoFilm = voci[i + 1] || null;
+                    }
+                }
+            }
+            if (filmInOnda && filmInOnda.filmLink) {
+                let link = filmInOnda.filmLink;
+                if (link.includes('mixdrop.co/f/'))  link = link.replace('mixdrop.co/f/', 'mixdrop.co/e/');
+                if (link.includes('mixdrop.top/f/')) link = link.replace('mixdrop.top/f/', 'mixdrop.top/e/');
+                const hFine = Math.floor(filmInOnda.fineMin / 60) % 24;
+                const mFine = filmInOnda.fineMin % 60;
+                const orarioFine = String(hFine).padStart(2,'0') + ':' + String(mFine).padStart(2,'0');
+                playerIframe.src = link;
+                playerIframe.dataset.currentLink = link;
+                playerContainer.style.display = 'block';
+                document.getElementById('player-banner-titolo').textContent = filmInOnda.titolo;
+                document.getElementById('player-banner-orario').textContent = '🎬 Inizio: ' + filmInOnda.orario + '  |  🏁 Fine: ' + orarioFine;
+                document.getElementById('player-banner-btn').href = link;
+                document.getElementById('player-banner-prossimo').textContent = prossimoFilm ? '⏭️ Prossimamente ore ' + prossimoFilm.orario + ': ' + prossimoFilm.titolo : '';
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+                playerContainer.style.display = 'none';
+                playerIframe.src = '';
+            }
+        } catch(err) { console.log('Errore debug banner player:', err); }
+    }
 
     // ===== AVVIO =====
     aggiornaBanner();
