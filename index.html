@@ -763,14 +763,17 @@
     async function aggiornaBannerPlayer() {
         const oggi = new Date();
         const chiave = getChiaveGiorno(oggi);
+        console.log('[PLAYER] chiamata — chiave=' + chiave + ' ore=' + oggi.getHours() + ':' + String(oggi.getMinutes()).padStart(2,'0') + ':' + String(oggi.getSeconds()).padStart(2,'0'));
 
         try {
             const snapshot = await firebase.database().ref(`palinsesto/${chiave}`).once('value');
+            console.log('[PLAYER] snapshot.exists=' + snapshot.exists());
 
             if (!snapshot.exists()) {
                 document.getElementById('player-banner').style.display = 'none';
                 document.getElementById('player-container').style.display = 'none';
                 document.getElementById('player-iframe').src = '';
+                console.log('[PLAYER] nessun palinsesto per', chiave, '— player nascosto');
                 return;
             }
 
@@ -779,6 +782,7 @@
             voci.sort((a, b) => a.orario.localeCompare(b.orario));
 
             const minutiAdesso = (debugMinuti !== null) ? debugMinuti : oggi.getHours() * 60 + oggi.getMinutes();
+            console.log('[PLAYER] minutiAdesso=' + minutiAdesso + ' num_film=' + voci.length + ' orari=' + voci.map(v => v.orario).join(','));
             let filmInOnda = null;
             let prossimoFilm = null;
 
@@ -787,13 +791,14 @@
                 const inizioMin = h * 60 + m;
                 const fineMin = inizioMin + (voci[i].durata || 90);
                 if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
-                    // In caso di sovrapposizione, vince il film con orario di inizio più tardo
                     if (!filmInOnda || inizioMin > filmInOnda.inizioMin) {
                         filmInOnda = { ...voci[i], inizioMin, fineMin };
                         prossimoFilm = voci[i + 1] || null;
                     }
                 }
             }
+
+            console.log('[PLAYER] filmInOnda=' + (filmInOnda ? '"' + filmInOnda.titolo + '" link=' + (filmInOnda.filmLink ? 'SI' : 'NO') : 'NESSUNO'));
 
             const banner = document.getElementById('player-banner');
             const playerContainer = document.getElementById('player-container');
@@ -904,7 +909,7 @@
             }
 
         } catch (err) {
-            console.log('Errore banner player:', err);
+            console.error('[PLAYER] ERRORE:', err);
         }
     }
 
