@@ -245,6 +245,7 @@
     let giornoVisualizzato = 0;
     let isAdmin = false;
     let debugMinuti = null; // null = orario reale; numero = orario simulato per test
+    let _playerGen = 0; // contatore generazione per annullare chiamate obsolete
 
     // ===== AUTH =====
     auth.onAuthStateChanged((user) => {
@@ -767,12 +768,14 @@
 
     // ===== BANNER PLAYER =====
     async function aggiornaBannerPlayer() {
+        const myGen = ++_playerGen;
         const oggi = new Date();
         const chiave = getChiaveGiorno(oggi);
-        console.log('[PLAYER] chiamata — chiave=' + chiave + ' ore=' + oggi.getHours() + ':' + String(oggi.getMinutes()).padStart(2,'0') + ':' + String(oggi.getSeconds()).padStart(2,'0'));
+        console.log('[PLAYER] chiamata gen=' + myGen + ' — chiave=' + chiave + ' ore=' + oggi.getHours() + ':' + String(oggi.getMinutes()).padStart(2,'0') + ':' + String(oggi.getSeconds()).padStart(2,'0'));
 
         try {
             const snapshot = await firebase.database().ref(`palinsesto/${chiave}`).once('value');
+            if (myGen !== _playerGen) { console.log('[PLAYER] gen=' + myGen + ' obsoleta, annullata'); return; }
             console.log('[PLAYER] snapshot.exists=' + snapshot.exists());
 
             if (!snapshot.exists()) {
@@ -925,6 +928,7 @@
         if (!val) { alert('Inserisci un orario!'); return; }
         const [h, m] = val.split(':').map(Number);
         debugMinuti = h * 60 + m;
+        _playerGen++;
         const dataUsata = getDataGiorno(giornoVisualizzato);
         const chiaveUsata = getChiaveGiorno(dataUsata);
         const labelGiorno = formatDataLabel(dataUsata);
@@ -939,6 +943,7 @@
 
     window.resetDebugOrario = function () {
         debugMinuti = null;
+        _playerGen++;
         document.getElementById('debug-time-input').value = '';
         document.getElementById('debug-orario-attivo').textContent = '';
         const playerIframe = document.getElementById('player-iframe');
