@@ -821,21 +821,22 @@
 
                     if (playerIframe._nextFilmTimer) clearTimeout(playerIframe._nextFilmTimer);
 
+                    const fineMinCapture = filmInOnda.fineMin;
+                    const prossimoInizioCapture = prossimoFilm ? (() => {
+                        const [ph, pm] = prossimoFilm.orario.split(':').map(Number);
+                        return ph * 60 + pm;
+                    })() : null;
+
                     let msAllaFine;
                     if (debugMinuti !== null) {
                         msAllaFine = 10000;
                     } else {
                         const nowTs = new Date();
                         const secsNow = nowTs.getHours() * 3600 + nowTs.getMinutes() * 60 + nowTs.getSeconds();
-                        const secsFine = filmInOnda.fineMin * 60;
-                        msAllaFine = Math.max(0, secsFine - secsNow) * 1000 + 2000;
+                        const targetMin = (prossimoInizioCapture !== null) ? prossimoInizioCapture : fineMinCapture;
+                        msAllaFine = Math.max(5000, (targetMin * 60 - secsNow) * 1000);
                     }
 
-                    const fineMinCapture = filmInOnda.fineMin;
-                    const prossimoInizioCapture = prossimoFilm ? (() => {
-                        const [ph, pm] = prossimoFilm.orario.split(':').map(Number);
-                        return ph * 60 + pm;
-                    })() : null;
                     playerIframe._nextFilmTimer = setTimeout(() => {
                         playerIframe.dataset.currentLink = '';
                         if (debugMinuti !== null) {
@@ -1037,6 +1038,15 @@
     aggiornaBannerPlayer();
     setInterval(aggiornaBanner, 30000);
     setInterval(aggiornaBannerPlayer, 30000);
+
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) {
+            const iframe = document.getElementById('player-iframe');
+            if (iframe._nextFilmTimer) clearTimeout(iframe._nextFilmTimer);
+            iframe.dataset.currentLink = '';
+            aggiornaBannerPlayer();
+        }
+    });
     </script>
 </body>
 </html>
