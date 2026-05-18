@@ -671,7 +671,8 @@
             titolo: film.titolo,
             tmdbId: film.tmdbId || null,
             durata: durata,
-            filmLink: film.filmLink || null
+            filmLink: film.filmLink || null,
+            addedAt: Date.now()
         });
 
         document.getElementById('orario-input').value = '';
@@ -716,8 +717,10 @@
                 const inizioMin = h * 60 + m;
                 const fineMin = inizioMin + (voci[i].durata || 90);
                 if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
-                    // In caso di sovrapposizione, vince l'ultimo aggiunto (id push Firebase piu' grande = piu' recente)
-                    if (!filmInOnda || voci[i].id > filmInOnda.id) {
+                    // In caso di sovrapposizione, vince l'ultimo aggiunto (addedAt più recente, fallback sull'id)
+                    const candidatoTs = voci[i].addedAt || 0;
+                    const attualeTs = filmInOnda ? (filmInOnda.addedAt || 0) : -1;
+                    if (!filmInOnda || candidatoTs > attualeTs) {
                         filmInOnda = { ...voci[i], inizioMin, fineMin };
                     }
                 }
@@ -775,8 +778,10 @@
                 const inizioMin = h * 60 + m;
                 const fineMin = inizioMin + (voci[i].durata || 90);
                 if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
-                    // In caso di sovrapposizione, vince l'ultimo aggiunto (id push Firebase piu' grande = piu' recente)
-                    if (!filmInOnda || voci[i].id > filmInOnda.id) {
+                    // In caso di sovrapposizione, vince l'ultimo aggiunto (addedAt più recente, fallback sull'id)
+                    const candidatoTs = voci[i].addedAt || 0;
+                    const attualeTs = filmInOnda ? (filmInOnda.addedAt || 0) : -1;
+                    if (!filmInOnda || candidatoTs > attualeTs) {
                         filmInOnda = { ...voci[i], inizioMin, fineMin };
                         prossimoFilm = voci[i + 1] || null;
                     }
