@@ -705,7 +705,7 @@
             }
 
             const voci = [];
-            snapshot.forEach(child => voci.push(child.val()));
+            snapshot.forEach(child => voci.push({ id: child.key, ...child.val() }));
             voci.sort((a, b) => a.orario.localeCompare(b.orario));
 
             const minutiAdesso = oggi.getHours() * 60 + oggi.getMinutes();
@@ -716,7 +716,8 @@
                 const inizioMin = h * 60 + m;
                 const fineMin = inizioMin + (voci[i].durata || 90);
                 if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
-                    if (!filmInOnda || inizioMin < filmInOnda.inizioMin) { // FIX: < invece di >
+                    // In caso di sovrapposizione, vince l'ultimo aggiunto (id push Firebase piu' grande = piu' recente)
+                    if (!filmInOnda || voci[i].id > filmInOnda.id) {
                         filmInOnda = { ...voci[i], inizioMin, fineMin };
                     }
                 }
@@ -762,7 +763,7 @@
             }
 
             const voci = [];
-            snapshot.forEach(child => voci.push(child.val()));
+            snapshot.forEach(child => voci.push({ id: child.key, ...child.val() }));
             voci.sort((a, b) => a.orario.localeCompare(b.orario));
 
             const minutiAdesso = oggi.getHours() * 60 + oggi.getMinutes();
@@ -774,7 +775,8 @@
                 const inizioMin = h * 60 + m;
                 const fineMin = inizioMin + (voci[i].durata || 90);
                 if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
-                    if (!filmInOnda || inizioMin < filmInOnda.inizioMin) { // FIX: < invece di >
+                    // In caso di sovrapposizione, vince l'ultimo aggiunto (id push Firebase piu' grande = piu' recente)
+                    if (!filmInOnda || voci[i].id > filmInOnda.id) {
                         filmInOnda = { ...voci[i], inizioMin, fineMin };
                         prossimoFilm = voci[i + 1] || null;
                     }
