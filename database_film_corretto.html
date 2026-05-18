@@ -245,8 +245,9 @@
     let giornoVisualizzato = 0;
     let isAdmin = false;
     let debugMinuti = null; // null = orario reale; numero = orario simulato per test
+    let debugChiave = null; // chiave giorno simulata (es: 2026-05-19)
 
-    // ===== AUTH =====
+            // ===== AUTH =====
     auth.onAuthStateChanged((user) => {
         const adminPanel = document.getElementById('admin-panel');
         const loginBtn = document.getElementById('auth-status-btn');
@@ -264,7 +265,7 @@
             loginBtn.style.display = 'inline-block';
             logoutBtn.style.display = 'none';
             document.getElementById('debug-panel').style.display = 'none';
-            resetDebugOrario && resetDebugOrario();
+            if (typeof resetDebugOrario === 'function') resetDebugOrario();
         }
         loadMovies();
         caricaPalinsesto();
@@ -388,7 +389,7 @@
         document.querySelectorAll('.edit-btn').forEach(b => b.onclick = () => openEditModal(b.dataset.id));
     }
 
-    async function searchMovies() {
+    const searchMovies = async () => {
         const query = document.getElementById('tmdb-search').value.trim();
         if (!query) return;
         document.getElementById('search-status').textContent = 'Ricerca in corso...';
@@ -431,7 +432,7 @@
         }
     }
 
-    async function selectMovie(id) {
+    const selectMovie = async (id) => {
         const res = await fetch(`${TMDB_BASE_URL}/movie/${id}?api_key=${API_KEY}&language=it-IT&append_to_response=credits`);
         const movie = await res.json();
         const director = movie.credits.crew.find(c => c.job === 'Director')?.name || 'N/A';
@@ -531,7 +532,7 @@
         return `${data.getFullYear()}-${String(data.getMonth()+1).padStart(2,'0')}-${String(data.getDate()).padStart(2,'0')}`;
     }
 
-    async function getDurataFilm(tmdbId) {
+    const getDurataFilm = async (tmdbId) => {
         try {
             const res = await fetch(`${TMDB_BASE_URL}/movie/${tmdbId}?api_key=${API_KEY}&language=it-IT`);
             const data = await res.json();
@@ -541,7 +542,7 @@
         }
     }
 
-    async function caricaPalinsesto() {
+    const caricaPalinsesto = async () => {
         const data = getDataGiorno(giornoVisualizzato);
         const chiave = getChiaveGiorno(data);
         document.getElementById('giorno-corrente-label').textContent = formatDataLabel(data);
@@ -564,8 +565,7 @@
             });
             voci.sort((a, b) => a.orario.localeCompare(b.orario));
 
-            const ora = new Date();
-            const minutiAdesso = ora.getHours() * 60 + ora.getMinutes();
+            const minutiAdesso = (debugMinuti !== null) ? debugMinuti : new Date().getHours() * 60 + new Date().getMinutes();
 
             voci.forEach((voce, index) => {
                 const tr = document.createElement('tr');
@@ -611,6 +611,7 @@
     function popolaSelectFilm() {
         firebase.database().ref('movies').once('value', snapshot => {
             const select = document.getElementById('film-select');
+            if (!select) return;
             select.innerHTML = '<option value="">-- Scegli un film --</option>';
             const data = snapshot.val();
             if (!data) return;
@@ -637,7 +638,7 @@
         });
     }
 
-    async function aggiungiAlPalinsesto() {
+    const aggiungiAlPalinsesto = async () => {
         const orario = document.getElementById('orario-input').value;
         const filmJson = document.getElementById('film-select').value;
 
@@ -705,9 +706,9 @@
     };
 
     // ===== BANNER ORA IN ONDA =====
-    async function aggiornaBanner() {
+    const aggiornaBanner = async () => {
         const oggi = new Date();
-        const chiave = getChiaveGiorno(oggi);
+        const chiave = debugChiave || getChiaveGiorno(oggi);
 
         try {
             const snapshot = await firebase.database().ref(`palinsesto/${chiave}`).once('value');
@@ -728,7 +729,6 @@
                 const inizioMin = h * 60 + m;
                 const fineMin = inizioMin + (voci[i].durata || 90);
                 if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
-                    // In caso di sovrapposizione, vince il film con orario di inizio più tardo
                     if (!filmInOnda || inizioMin > filmInOnda.inizioMin) {
                         filmInOnda = { ...voci[i], inizioMin, fineMin };
                     }
@@ -760,17 +760,29 @@
     }
 
     // ===== BANNER PLAYER =====
-    async function aggiornaBannerPlayer() {
+    const aggiornaBannerPlayer = async () => {
         const oggi = new Date();
-        const chiave = getChiaveGiorno(oggi);
+        const chiave = debugChiave || getChiaveGiorno(oggi);
 
         try {
             const snapshot = await firebase.database().ref(`palinsesto/${chiave}`).once('value');
+            const banner = document.getElementById('player-banner');
+            const playerContainer = document.getElementById('player-container');
+            const playerIframe = document.getElementById('player-iframe');
+            let skipMsg = document.getElementById('skip-message');
+            if (!skipMsg) {
+                skipMsg = document.createElement('p');
+                skipMsg.id = 'skip-message';
+                skipMsg.style.cssText = 'text-align:center; color:#e94560; font-size:1em; margin:10px 0; font-weight:bold;';
+                playerContainer.insertAdjacentElement('afterend', skipMsg);
+            }
 
             if (!snapshot.exists()) {
-                document.getElementById('player-banner').style.display = 'none';
-                document.getElementById('player-container').style.display = 'none';
-                document.getElementById('player-iframe').src = '';
+                banner.style.display = 'none';
+                playerContainer.style.display = 'none';
+                playerIframe.src = '';
+                playerIframe.dataset.currentLink = '';
+                skipMsg.textContent = '';
                 return;
             }
 
@@ -786,29 +798,69 @@
                 const [h, m] = voci[i].orario.split(':').map(Number);
                 const inizioMin = h * 60 + m;
                 const fineMin = inizioMin + (voci[i].durata || 90);
+
                 if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
-                    // In caso di sovrapposizione, vince il film con orario di inizio più tardo
                     if (!filmInOnda || inizioMin > filmInOnda.inizioMin) {
                         filmInOnda = { ...voci[i], inizioMin, fineMin };
-                        prossimoFilm = voci[i + 1] || null;
+                    }
+                } else if (inizioMin > minutiAdesso) {
+                    if (!prossimoFilm || inizioMin < prossimoFilm.inizioMin) {
+                        prossimoFilm = { ...voci[i], inizioMin };
                     }
                 }
             }
 
-            const banner = document.getElementById('player-banner');
-            const playerContainer = document.getElementById('player-container');
-            const playerIframe = document.getElementById('player-iframe');
-
             if (debugMinuti !== null) {
-                console.log('[DEBUG] chiave:', chiave, 'debugMinuti:', debugMinuti, 'film trovati:', voci.map(v => v.orario + ' ' + v.titolo), 'filmInOnda:', filmInOnda ? filmInOnda.titolo : null);
                 const debugEl = document.getElementById('debug-orario-attivo');
+                const orarioSim = `${String(Math.floor(debugMinuti/60)).padStart(2,'0')}:${String(debugMinuti%60).padStart(2,'0')}`;
                 if (filmInOnda) {
-                    debugEl.textContent = `▶ Simulo ${String(Math.floor(debugMinuti/60)).padStart(2,'0')}:${String(debugMinuti%60).padStart(2,'0')} → In onda: "${filmInOnda.titolo}" ${filmInOnda.filmLink ? '✅ ha link' : '⚠️ nessun link (video non riproducibile)'}`;
+                    debugEl.textContent = `▶ Simulo ${orarioSim} → In onda: "${filmInOnda.titolo}" ${filmInOnda.filmLink ? '✅' : '⚠️ No link'}`;
                 } else {
-                    debugEl.textContent = `⏸ Simulo ${String(Math.floor(debugMinuti/60)).padStart(2,'0')}:${String(debugMinuti%60).padStart(2,'0')} → Nessun film in onda a quest'orario`;
+                    debugEl.textContent = `⏸ Simulo ${orarioSim} → Nessun film in onda (Prossimo: ${prossimoFilm ? prossimoFilm.orario : 'nessuno'})`;
                 }
             }
 
+            // Gestione Timer Transizione
+            if (playerIframe._nextFilmTimer) clearTimeout(playerIframe._nextFilmTimer);
+            
+            let msTimer = 0;
+            let targetMinuti = null;
+
+            if (filmInOnda) {
+                if (debugMinuti !== null) {
+                    msTimer = 10000;
+                    targetMinuti = prossimoFilm ? prossimoFilm.inizioMin : filmInOnda.fineMin;
+                } else {
+                    const nowTs = new Date();
+                    const secsNow = nowTs.getHours() * 3600 + nowTs.getMinutes() * 60 + nowTs.getSeconds();
+                    const secsFine = filmInOnda.fineMin * 60;
+                    msTimer = Math.max(0, secsFine - secsNow) * 1000 + 2000;
+                    targetMinuti = null; // In real-time aggiornaBannerPlayer() troverà lo stato corretto
+                }
+            } else if (prossimoFilm) {
+                if (debugMinuti !== null) {
+                    msTimer = 5000; // Salta velocemente al prossimo film se siamo in un buco
+                    targetMinuti = prossimoFilm.inizioMin;
+                } else {
+                    const nowTs = new Date();
+                    const secsNow = nowTs.getHours() * 3600 + nowTs.getMinutes() * 60 + nowTs.getSeconds();
+                    const secsInizio = prossimoFilm.inizioMin * 60;
+                    msTimer = Math.max(0, secsInizio - secsNow) * 1000 + 2000;
+                    targetMinuti = null;
+                }
+            }
+
+            if (msTimer > 0) {
+                playerIframe._nextFilmTimer = setTimeout(() => {
+                    playerIframe.dataset.currentLink = '';
+                    if (debugMinuti !== null && targetMinuti !== null) {
+                        debugMinuti = targetMinuti;
+                    }
+                    aggiornaBannerPlayer();
+                }, msTimer);
+            }
+
+            // Aggiornamento UI Player
             if (filmInOnda) {
                 let link = filmInOnda.filmLink || null;
                 if (link && link.includes('mixdrop.co/f/'))  link = link.replace('mixdrop.co/f/', 'mixdrop.co/e/');
@@ -818,32 +870,6 @@
 
                 if (playerIframe.dataset.currentLink !== filmKey) {
                     playerIframe.dataset.currentLink = filmKey;
-
-                    if (playerIframe._nextFilmTimer) clearTimeout(playerIframe._nextFilmTimer);
-
-                    let msAllaFine;
-                    if (debugMinuti !== null) {
-                        msAllaFine = 10000;
-                    } else {
-                        const nowTs = new Date();
-                        const secsNow = nowTs.getHours() * 3600 + nowTs.getMinutes() * 60 + nowTs.getSeconds();
-                        const secsFine = filmInOnda.fineMin * 60;
-                        msAllaFine = Math.max(0, secsFine - secsNow) * 1000 + 2000;
-                    }
-
-                    const fineMinCapture = filmInOnda.fineMin;
-                    const prossimoInizioCapture = prossimoFilm ? (() => {
-                        const [ph, pm] = prossimoFilm.orario.split(':').map(Number);
-                        return ph * 60 + pm;
-                    })() : null;
-                    playerIframe._nextFilmTimer = setTimeout(() => {
-                        playerIframe.dataset.currentLink = '';
-                        if (debugMinuti !== null) {
-                            debugMinuti = (prossimoInizioCapture !== null) ? prossimoInizioCapture : fineMinCapture;
-                        }
-                        aggiornaBannerPlayer();
-                    }, msAllaFine);
-
                     if (link) {
                         playerIframe.src = link;
                         playerContainer.style.display = 'block';
@@ -863,15 +889,8 @@
                     document.getElementById('player-banner-titolo').textContent = filmInOnda.titolo;
                     document.getElementById('player-banner-orario').textContent = `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFine}`;
                     document.getElementById('player-banner-btn').href = link;
-
+                    
                     const minutiTrascorsi = minutiAdesso - filmInOnda.inizioMin;
-                    let skipMsg = document.getElementById('skip-message');
-                    if (!skipMsg) {
-                        skipMsg = document.createElement('p');
-                        skipMsg.id = 'skip-message';
-                        skipMsg.style.cssText = 'text-align:center; color:#e94560; font-size:1em; margin:10px 0; font-weight:bold;';
-                        playerContainer.insertAdjacentElement('afterend', skipMsg);
-                    }
                     if (minutiTrascorsi > 0) {
                         const ore = Math.floor(minutiTrascorsi / 60);
                         const minuti = minutiTrascorsi % 60;
@@ -880,28 +899,19 @@
                     } else {
                         skipMsg.textContent = '';
                     }
-
                     document.getElementById('player-banner-prossimo').textContent = prossimoFilm ? `⏭️ Prossimamente ore ${prossimoFilm.orario}: ${prossimoFilm.titolo}` : '';
                     banner.style.display = 'block';
                 } else {
                     banner.style.display = 'none';
-                    const skipMsg = document.getElementById('skip-message');
-                    if (skipMsg) skipMsg.textContent = '';
+                    skipMsg.textContent = '';
                 }
-
             } else {
-                if (playerIframe._nextFilmTimer) {
-                    clearTimeout(playerIframe._nextFilmTimer);
-                    playerIframe._nextFilmTimer = null;
-                }
                 banner.style.display = 'none';
                 playerContainer.style.display = 'none';
                 playerIframe.src = '';
                 playerIframe.dataset.currentLink = '';
-                const skipMsg = document.getElementById('skip-message');
-                if (skipMsg) skipMsg.textContent = '';
+                skipMsg.textContent = '';
             }
-
         } catch (err) {
             console.log('Errore banner player:', err);
         }
@@ -913,20 +923,25 @@
         if (!val) { alert('Inserisci un orario!'); return; }
         const [h, m] = val.split(':').map(Number);
         debugMinuti = h * 60 + m;
+        
         const dataUsata = getDataGiorno(giornoVisualizzato);
-        const chiaveUsata = getChiaveGiorno(dataUsata);
+        debugChiave = getChiaveGiorno(dataUsata);
         const labelGiorno = formatDataLabel(dataUsata);
-        document.getElementById('debug-orario-attivo').textContent =
+        
+        document.getElementById('debug-orario-attivo').textContent = 
             'Simulo le ' + val + ' di ' + labelGiorno + ' — avanzamento automatico ogni 10s';
-        aggiornaBannerDebug(chiaveUsata);
+        
         const playerIframe = document.getElementById('player-iframe');
         playerIframe.dataset.currentLink = '';
         if (playerIframe._nextFilmTimer) clearTimeout(playerIframe._nextFilmTimer);
+        
+        aggiornaBanner();
         aggiornaBannerPlayer();
     };
 
     window.resetDebugOrario = function () {
         debugMinuti = null;
+        debugChiave = null;
         document.getElementById('debug-time-input').value = '';
         document.getElementById('debug-orario-attivo').textContent = '';
         const playerIframe = document.getElementById('player-iframe');
@@ -935,102 +950,6 @@
         aggiornaBanner();
         aggiornaBannerPlayer();
     };
-
-    // Versioni debug che accettano una chiave giorno esplicita
-    async function aggiornaBannerDebug(chiave) {
-        try {
-            const snapshot = await firebase.database().ref('palinsesto/' + chiave).once('value');
-            if (!snapshot.exists()) {
-                document.getElementById('ora-in-onda-banner').style.display = 'none';
-                document.getElementById('debug-orario-attivo').textContent += ' — Nessun film trovato per questo giorno!';
-                return;
-            }
-            const voci = [];
-            snapshot.forEach(child => voci.push({ id: child.key, ...child.val() }));
-            voci.sort((a, b) => a.orario.localeCompare(b.orario));
-            const minutiAdesso = debugMinuti;
-            let filmInOnda = null;
-            for (let i = 0; i < voci.length; i++) {
-                const [h, m] = voci[i].orario.split(':').map(Number);
-                const inizioMin = h * 60 + m;
-                const fineMin = inizioMin + (voci[i].durata || 90);
-                if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
-                    if (!filmInOnda || inizioMin > filmInOnda.inizioMin) {
-                        filmInOnda = { ...voci[i], inizioMin, fineMin };
-                    }
-                }
-            }
-            const banner = document.getElementById('ora-in-onda-banner');
-            if (filmInOnda) {
-                const durata = filmInOnda.fineMin - filmInOnda.inizioMin;
-                const trascorso = minutiAdesso - filmInOnda.inizioMin;
-                const percentuale = Math.min(Math.round((trascorso / durata) * 100), 100);
-                const hFine = Math.floor(filmInOnda.fineMin / 60) % 24;
-                const mFine = filmInOnda.fineMin % 60;
-                const orarioFine = String(hFine).padStart(2,'0') + ':' + String(mFine).padStart(2,'0');
-                document.getElementById('ora-in-onda-titolo').textContent = filmInOnda.titolo;
-                document.getElementById('ora-in-onda-orario').textContent = '🎬 Inizio: ' + filmInOnda.orario + '  |  🏁 Fine: ' + orarioFine;
-                document.getElementById('barra-avanzamento').style.width = percentuale + '%';
-                document.getElementById('barra-percentuale').textContent = percentuale + '%';
-                banner.style.display = 'block';
-            } else {
-                banner.style.display = 'none';
-                document.getElementById('debug-orario-attivo').textContent += ' — Nessun film in onda a quell\'orario.';
-            }
-        } catch(err) { console.log('Errore debug banner:', err); }
-    }
-
-    async function aggiornaBannerPlayerDebug(chiave) {
-        try {
-            const snapshot = await firebase.database().ref('palinsesto/' + chiave).once('value');
-            const banner = document.getElementById('player-banner');
-            const playerContainer = document.getElementById('player-container');
-            const playerIframe = document.getElementById('player-iframe');
-            if (!snapshot.exists()) {
-                banner.style.display = 'none';
-                playerContainer.style.display = 'none';
-                playerIframe.src = '';
-                return;
-            }
-            const voci = [];
-            snapshot.forEach(child => voci.push({ id: child.key, ...child.val() }));
-            voci.sort((a, b) => a.orario.localeCompare(b.orario));
-            const minutiAdesso = debugMinuti;
-            let filmInOnda = null;
-            let prossimoFilm = null;
-            for (let i = 0; i < voci.length; i++) {
-                const [h, m] = voci[i].orario.split(':').map(Number);
-                const inizioMin = h * 60 + m;
-                const fineMin = inizioMin + (voci[i].durata || 90);
-                if (minutiAdesso >= inizioMin && minutiAdesso < fineMin) {
-                    if (!filmInOnda || inizioMin > filmInOnda.inizioMin) {
-                        filmInOnda = { ...voci[i], inizioMin, fineMin };
-                        prossimoFilm = voci[i + 1] || null;
-                    }
-                }
-            }
-            if (filmInOnda && filmInOnda.filmLink) {
-                let link = filmInOnda.filmLink;
-                if (link.includes('mixdrop.co/f/'))  link = link.replace('mixdrop.co/f/', 'mixdrop.co/e/');
-                if (link.includes('mixdrop.top/f/')) link = link.replace('mixdrop.top/f/', 'mixdrop.top/e/');
-                const hFine = Math.floor(filmInOnda.fineMin / 60) % 24;
-                const mFine = filmInOnda.fineMin % 60;
-                const orarioFine = String(hFine).padStart(2,'0') + ':' + String(mFine).padStart(2,'0');
-                playerIframe.src = link;
-                playerIframe.dataset.currentLink = link;
-                playerContainer.style.display = 'block';
-                document.getElementById('player-banner-titolo').textContent = filmInOnda.titolo;
-                document.getElementById('player-banner-orario').textContent = '🎬 Inizio: ' + filmInOnda.orario + '  |  🏁 Fine: ' + orarioFine;
-                document.getElementById('player-banner-btn').href = link;
-                document.getElementById('player-banner-prossimo').textContent = prossimoFilm ? '⏭️ Prossimamente ore ' + prossimoFilm.orario + ': ' + prossimoFilm.titolo : '';
-                banner.style.display = 'block';
-            } else {
-                banner.style.display = 'none';
-                playerContainer.style.display = 'none';
-                playerIframe.src = '';
-            }
-        } catch(err) { console.log('Errore debug banner player:', err); }
-    }
 
     // ===== AVVIO =====
     aggiornaBanner();
