@@ -1069,6 +1069,12 @@
             const iframe = document.getElementById('player-iframe');
             if (iframe._nextFilmTimer) clearTimeout(iframe._nextFilmTimer);
             iframe.dataset.currentLink = '';
+            if (debugMinuti !== null) {
+                debugMinuti = null;
+                _playerGen++;
+                document.getElementById('debug-time-input').value = '';
+                document.getElementById('debug-orario-attivo').textContent = '';
+            }
             aggiornaBannerPlayer();
         }
     });
