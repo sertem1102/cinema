@@ -770,7 +770,7 @@
     async function aggiornaBannerPlayer() {
         const myGen = ++_playerGen;
         const oggi = new Date();
-        const chiave = getChiaveGiorno(oggi);
+        const chiave = (debugMinuti !== null) ? getChiaveGiorno(getDataGiorno(giornoVisualizzato)) : getChiaveGiorno(oggi);
         console.log('[PLAYER] chiamata gen=' + myGen + ' — chiave=' + chiave + ' ore=' + oggi.getHours() + ':' + String(oggi.getMinutes()).padStart(2,'0') + ':' + String(oggi.getSeconds()).padStart(2,'0'));
 
         try {
