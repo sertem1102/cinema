@@ -1051,9 +1051,18 @@
 
     // ===== AVVIO =====
     aggiornaBanner();
-    aggiornaBannerPlayer();
     setInterval(aggiornaBanner, 30000);
     setInterval(aggiornaBannerPlayer, 30000);
+
+    // Listener Firebase real-time: aggiorna il player istantaneamente quando cambia il palinsesto
+    (function setupPlayerListener() {
+        const chiaveOggi = getChiaveGiorno(new Date());
+        firebase.database().ref(`palinsesto/${chiaveOggi}`).on('value', function() {
+            const iframe = document.getElementById('player-iframe');
+            iframe.dataset.currentLink = '';
+            aggiornaBannerPlayer();
+        });
+    })();
 
     document.addEventListener('visibilitychange', function () {
         if (!document.hidden) {
