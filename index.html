@@ -762,7 +762,9 @@
     // ===== BANNER PLAYER =====
     async function aggiornaBannerPlayer() {
         const oggi = new Date();
-        const chiave = getChiaveGiorno(oggi);
+        const chiave = (debugMinuti !== null)
+            ? getChiaveGiorno(getDataGiorno(giornoVisualizzato))
+            : getChiaveGiorno(oggi);
 
         try {
             const snapshot = await firebase.database().ref(`palinsesto/${chiave}`).once('value');
@@ -811,13 +813,22 @@
 
                     if (playerIframe._nextFilmTimer) clearTimeout(playerIframe._nextFilmTimer);
 
-                    const nowTs = new Date();
-                    const secsNow = nowTs.getHours() * 3600 + nowTs.getMinutes() * 60 + nowTs.getSeconds();
-                    const secsFine = filmInOnda.fineMin * 60;
-                    const msAllaFine = Math.max(0, secsFine - secsNow) * 1000 + 2000;
+                    let msAllaFine;
+                    if (debugMinuti !== null) {
+                        msAllaFine = 10000;
+                    } else {
+                        const nowTs = new Date();
+                        const secsNow = nowTs.getHours() * 3600 + nowTs.getMinutes() * 60 + nowTs.getSeconds();
+                        const secsFine = filmInOnda.fineMin * 60;
+                        msAllaFine = Math.max(0, secsFine - secsNow) * 1000 + 2000;
+                    }
 
+                    const fineMinCapture = filmInOnda.fineMin;
                     playerIframe._nextFilmTimer = setTimeout(() => {
                         playerIframe.dataset.currentLink = '';
+                        if (debugMinuti !== null) {
+                            debugMinuti = fineMinCapture;
+                        }
                         aggiornaBannerPlayer();
                     }, msAllaFine);
 
@@ -894,15 +905,21 @@
         const chiaveUsata = getChiaveGiorno(dataUsata);
         const labelGiorno = formatDataLabel(dataUsata);
         document.getElementById('debug-orario-attivo').textContent =
-            'Simulo le ' + val + ' di ' + labelGiorno + ' (chiave: ' + chiaveUsata + ')';
+            'Simulo le ' + val + ' di ' + labelGiorno + ' — avanzamento automatico ogni 10s';
         aggiornaBannerDebug(chiaveUsata);
-        aggiornaBannerPlayerDebug(chiaveUsata);
+        const playerIframe = document.getElementById('player-iframe');
+        playerIframe.dataset.currentLink = '';
+        if (playerIframe._nextFilmTimer) clearTimeout(playerIframe._nextFilmTimer);
+        aggiornaBannerPlayer();
     };
 
     window.resetDebugOrario = function () {
         debugMinuti = null;
         document.getElementById('debug-time-input').value = '';
         document.getElementById('debug-orario-attivo').textContent = '';
+        const playerIframe = document.getElementById('player-iframe');
+        playerIframe.dataset.currentLink = '';
+        if (playerIframe._nextFilmTimer) clearTimeout(playerIframe._nextFilmTimer);
         aggiornaBanner();
         aggiornaBannerPlayer();
     };
