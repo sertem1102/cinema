@@ -184,10 +184,10 @@
             <button onclick="aggiungiAlPalinsesto()">Aggiungi</button>
             <hr style="border-color:#2e4a81; margin:20px 0;">
             <h3>🤖 Genera Palinsesto Automatico</h3>
-            <p style="color:#aaa; font-size:0.9em;">Genera 30 giorni di palinsesto a partire da oggi. I film del 2025/2026 vanno in onda dalle 18:00 all'01:00, gli altri durante tutto il giorno. Prima di ogni film vengono inseriti 3 trailer dei film successivi.</p>
+            <p style="color:#aaa; font-size:0.9em;">Genera 30 giorni di palinsesto. Film 2025/2026 in onda dalle 18:00 all'01:00, gli altri tutto il giorno. Prima di ogni film vengono inseriti 3 trailer dei film successivi.</p>
             <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                 <button onclick="generaPalinsesto()" style="background:#27ae60;">🎬 Genera 30 Giorni</button>
-                <button onclick="svuotaPalinsesto()" style="background:#c0392b; font-size:0.9em; padding:10px 18px;">🗑️ Svuota tutto il palinsesto</button>
+                <button onclick="svuotaPalinsesto()" style="background:#c0392b; font-size:0.9em; padding:10px 18px;">🗑️ Svuota palinsesto</button>
             </div>
             <div id="genera-status" style="margin-top:12px; color:#f39c12; font-size:0.9em; font-weight:bold;"></div>
         </div>
@@ -477,30 +477,44 @@
         document.getElementById('edit-modal').style.display = 'flex';
     }
 
-    document.getElementById('search-movie-btn').onclick = searchMovies;
+    // Questi handler vengono registrati solo dopo che il DOM è pronto
+    function registraHandler() {
+        const searchBtn = document.getElementById('search-movie-btn');
+        if (searchBtn) searchBtn.onclick = searchMovies;
 
-    document.getElementById('add-movie-btn').onclick = () => {
-        currentMovieData.filmLink = document.getElementById('film-link').value;
-        currentMovieData.trailerLink = document.getElementById('trailer-link').value;
-        currentMovieData.audioLanguage = document.querySelector('input[name="audio-lang"]:checked').value;
-        allMovies.push(currentMovieData);
-        saveMovies(allMovies);
-        document.getElementById('movie-details-form').style.display = 'none';
-        document.getElementById('tmdb-search').value = '';
-    };
+        const addBtn = document.getElementById('add-movie-btn');
+        if (addBtn) addBtn.onclick = () => {
+            currentMovieData.filmLink = document.getElementById('film-link')?.value || '';
+            currentMovieData.trailerLink = document.getElementById('trailer-link')?.value || '';
+            const langChecked = document.querySelector('input[name="audio-lang"]:checked');
+            currentMovieData.audioLanguage = langChecked ? langChecked.value : 'Italiano';
+            allMovies.push(currentMovieData);
+            saveMovies(allMovies);
+            const detForm = document.getElementById('movie-details-form');
+            if (detForm) detForm.style.display = 'none';
+            const searchEl = document.getElementById('tmdb-search');
+            if (searchEl) searchEl.value = '';
+        };
 
-    document.getElementById('save-edit-btn').onclick = () => {
-        const idx = allMovies.findIndex(m => m.id === editingMovieId);
-        allMovies[idx].filmLink = document.getElementById('edit-film-link').value;
-        allMovies[idx].trailerLink = document.getElementById('edit-trailer-link').value;
-        allMovies[idx].audioLanguage = document.querySelector('input[name="edit-audio-lang"]:checked').value;
-        saveMovies(allMovies);
-        document.getElementById('edit-modal').style.display = 'none';
-    };
+        const saveEditBtn = document.getElementById('save-edit-btn');
+        if (saveEditBtn) saveEditBtn.onclick = () => {
+            const idx = allMovies.findIndex(m => m.id === editingMovieId);
+            if (idx === -1) return;
+            allMovies[idx].filmLink = document.getElementById('edit-film-link')?.value || '';
+            allMovies[idx].trailerLink = document.getElementById('edit-trailer-link')?.value || '';
+            const langChecked = document.querySelector('input[name="edit-audio-lang"]:checked');
+            allMovies[idx].audioLanguage = langChecked ? langChecked.value : 'Italiano';
+            saveMovies(allMovies);
+            const modal = document.getElementById('edit-modal');
+            if (modal) modal.style.display = 'none';
+        };
 
-    document.querySelector('.close-button').onclick = () => {
-        document.getElementById('edit-modal').style.display = 'none';
-    };
+        const closeBtn = document.querySelector('.close-button');
+        if (closeBtn) closeBtn.onclick = () => {
+            const modal = document.getElementById('edit-modal');
+            if (modal) modal.style.display = 'none';
+        };
+    }
 
     document.querySelectorAll('.copy-btn').forEach(btn => {
         btn.onclick = () => {
@@ -547,6 +561,7 @@
         const ref = firebase.database().ref(`palinsesto/${chiave}`);
         ref.once('value', snapshot => {
             const tbody = document.getElementById('palinsesto-body');
+            if (!tbody) return;
             tbody.innerHTML = '';
 
             if (!snapshot.exists()) {
@@ -560,31 +575,29 @@
             });
             voci.sort((a, b) => a.orario.localeCompare(b.orario));
 
-            // Il pallino rosso ha senso solo se stiamo guardando il giorno corrente
-            const oggi = new Date();
-            const minutiAdesso = oggi.getHours() * 60 + oggi.getMinutes();
-            const isOggi = (giornoVisualizzato === 0);
+            const now = new Date();
+            // Minuti attuali: se siamo tra 0-7 di notte li trattiamo come 24xx per matchare orari generati oltre mezzanotte
+            const hOra = now.getHours();
+            const mOra = now.getMinutes();
+            const minutiAdesso = hOra < 8 ? (24 * 60 + hOra * 60 + mOra) : (hOra * 60 + mOra);
+            const isOggi = giornoVisualizzato === 0;
 
             voci.forEach((voce, index) => {
                 const tr = document.createElement('tr');
                 const durataStr = voce.durata ? `${voce.durata} min` : '...';
 
                 const [h, m] = voce.orario.split(':').map(Number);
-                // Gestione orari oltre mezzanotte: se h < 6 e il film precedente era serale, è il giorno dopo
-                let inizioMin = h * 60 + m;
-                if (index > 0) {
-                    const [hPrec] = voci[index - 1].orario.split(':').map(Number);
-                    if (hPrec >= 20 && h < 6) inizioMin += 24 * 60; // normalizza oltre mezzanotte
-                }
+                const inizioMin = h * 60 + m; // es. 24:30 → 1470, 08:00 → 480
                 const fineMin = inizioMin + (voce.durata || 90);
 
+                // Orario fine: normalizza per display (24:30 → 00:30)
                 const hFine = Math.floor(fineMin / 60) % 24;
                 const mFine = fineMin % 60;
                 const orarioFine = `${String(hFine).padStart(2,'0')}:${String(mFine).padStart(2,'0')}`;
+                // Orario inizio display (es. 24:30 → 00:30)
+                const orarioDisplay = `${String(h % 24).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
 
-                // minutiAdesso normalizzato: se è dopo mezzanotte (0–5) lo trattiamo come 1440+
-                const minNorm = (oggi.getHours() < 6) ? minutiAdesso + 24 * 60 : minutiAdesso;
-                const inOnda = isOggi && minNorm >= inizioMin && minNorm < fineMin;
+                const inOnda = isOggi && minutiAdesso >= inizioMin && minutiAdesso < fineMin;
 
                 let sovrapposto = false;
                 if (index > 0) {
@@ -600,25 +613,21 @@
                     tr.classList.add('in-onda-row');
                     tr.title = 'Clicca per guardare';
                 }
-                if (sovrapposto) {
-                    tr.classList.add('sovrapposizione');
-                }
+                if (sovrapposto) tr.classList.add('sovrapposizione');
 
+                // innerHTML PRIMA, onclick DOPO (altrimenti viene sovrascritto)
                 tr.innerHTML = `
-                    <td>${inOnda ? '🔴 ' : ''}${sovrapposto ? '⚠️ ' : ''}${voce.orario} - ${orarioFine}</td>
+                    <td>${inOnda ? '🔴 ' : ''}${sovrapposto ? '⚠️ ' : ''}${orarioDisplay} - ${orarioFine}</td>
                     <td>${voce.titolo}</td>
                     <td>${durataStr}</td>
-                    ${isAdmin ? `<td><button onclick="event.stopPropagation(); rimuoviDalPalinsesto('${chiave}','${voce.id}')" style="padding:5px 10px; font-size:0.8em;">🗑️ Rimuovi</button></td>` : ''}
+                    ${isAdmin ? `<td><button onclick="event.stopPropagation();rimuoviDalPalinsesto('${chiave}','${voce.id}')" style="padding:5px 10px; font-size:0.8em;">🗑️ Rimuovi</button></td>` : ''}
                 `;
-
-                // onclick assegnato DOPO innerHTML per non essere sovrascritto
                 if (inOnda) {
                     tr.onclick = (e) => {
-                        if (e.target.tagName === 'BUTTON') return; // ignora click sul Rimuovi
+                        if (e.target.tagName === 'BUTTON') return;
                         window.apriManualmenteFilm(voce);
                     };
                 }
-
                 tbody.appendChild(tr);
             });
         });
@@ -739,7 +748,10 @@
             snapshot.forEach(child => voci.push({ id: child.key, ...child.val() }));
             voci.sort((a, b) => a.orario.localeCompare(b.orario));
 
-            const minutiAdesso = oggi.getHours() * 60 + oggi.getMinutes();
+            const hOra = oggi.getHours();
+            const mOra = oggi.getMinutes();
+            // Normalizza: ore 0-7 → 1440+ per matchare orari generati oltre mezzanotte (es. 24:30)
+            const minutiAdesso = hOra < 8 ? (24 * 60 + hOra * 60 + mOra) : (hOra * 60 + mOra);
             let filmInOnda = null;
 
             for (let i = 0; i < voci.length; i++) {
@@ -855,7 +867,10 @@
 
             let filmInOnda = null;
             let prossimoFilm = null;
-            let minutiAdesso = oggi.getHours() * 60 + oggi.getMinutes();
+            const hOraP = oggi.getHours();
+            const mOraP = oggi.getMinutes();
+            // Normalizza: ore 0-7 → 1440+ per matchare orari 24:xx generati oltre mezzanotte
+            let minutiAdesso = hOraP < 8 ? (24 * 60 + hOraP * 60 + mOraP) : (hOraP * 60 + mOraP);
 
             if (filmForzato) {
                 filmInOnda = filmForzato;
@@ -983,7 +998,6 @@
 
 
     // ===== GENERATORE PALINSESTO AUTOMATICO =====
-
     function setStatus(msg) {
         const el = document.getElementById('genera-status');
         if (el) el.textContent = msg;
@@ -1006,30 +1020,18 @@
 
     window.generaPalinsesto = async function () {
         setStatus('Caricamento film dal database...');
-
-        // 1. Leggi tutti i film dal db
         const snap = await firebase.database().ref('movies').once('value');
         const raw = snap.val();
         if (!raw) { setStatus('❌ Nessun film trovato nel database.'); return; }
 
         const tuttiFilm = (Array.isArray(raw) ? raw : Object.values(raw))
             .filter(m => m && m.title && m.filmLink);
-
         if (tuttiFilm.length === 0) { setStatus('❌ Nessun film con link disponibile.'); return; }
 
-        const annoCorrente = new Date().getFullYear();
-        const filmRecenti  = tuttiFilm.filter(m => {
-            const y = parseInt(m.year || (m.release_date || '').substring(0,4));
-            return y >= 2025;
-        });
-        const filmClassici = tuttiFilm.filter(m => {
-            const y = parseInt(m.year || (m.release_date || '').substring(0,4));
-            return y < 2025;
-        });
+        const filmRecenti  = tuttiFilm.filter(m => parseInt(m.year || (m.release_date||'').substring(0,4)) >= 2025);
+        const filmClassici = tuttiFilm.filter(m => parseInt(m.year || (m.release_date||'').substring(0,4)) <  2025);
+        setStatus('Recenti: ' + filmRecenti.length + ' | Classici: ' + filmClassici.length + '. Recupero durate...');
 
-        setStatus('Film recenti: ' + filmRecenti.length + ' | Classici: ' + filmClassici.length + '. Recupero durate...');
-
-        // 2. Ottieni durate da TMDB (con cache)
         const durataCache = {};
         async function getDurata(film) {
             const key = film.id || film.tmdbId || film.title;
@@ -1041,143 +1043,98 @@
                     const d = await r.json();
                     durataCache[key] = d.runtime || 90;
                     return durataCache[key];
-                } catch { }
+                } catch {}
             }
             durataCache[key] = 90;
             return 90;
         }
 
-        // 3. Scegli film casuali bilanciati per il giorno
         function shuffle(arr) {
             const a = [...arr];
-            for (let i = a.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [a[i], a[j]] = [a[j], a[i]];
+            for (let i = a.length-1; i > 0; i--) {
+                const j = Math.floor(Math.random()*(i+1));
+                [a[i],a[j]] = [a[j],a[i]];
             }
             return a;
         }
 
-        // 4. Per ogni giorno genera il palinsesto
-        const TRAILER_DURATA = 3; // minuti per trailer
-        const N_TRAILER = 3;
-
-        for (let giorno = 0; giorno < 30; giorno++) {
-            const data = getDataGiorno(giorno);
-            const chiave = getChiaveGiorno(data);
-            setStatus('Generando giorno ' + (giorno + 1) + '/30: ' + chiave + '...');
-
-            // Slot disponibili:
-            // Classici: 08:00 → 18:00
-            // Recenti:  18:00 → 01:00 (= 60+25*60 = 1500 min)
-            // Tutto giorno: 08:00 → 01:00 (se classici riempiono anche oltre 18)
-
-            const vociGiorno = [];
-            let cursoreMin = 8 * 60; // 08:00
-
-            // Film classici: 08:00 – 18:00
-            const classiciShuffled = shuffle(filmClassici.length > 0 ? filmClassici : tuttiFilm);
-            let ci = 0;
-            while (cursoreMin < 18 * 60) {
-                const film = classiciShuffled[ci % Math.max(classiciShuffled.length, 1)];
-                ci++;
-                const durata = await getDurata(film);
-
-                // Inserisci trailer (film successivi in lista)
-                for (let t = 0; t < N_TRAILER; t++) {
-                    const trailerFilm = classiciShuffled[(ci + t) % classiciShuffled.length];
-                    if (trailerFilm && trailerFilm.trailerLink) {
-                        const hT = Math.floor(cursoreMin / 60) % 24;
-                        const mT = cursoreMin % 60;
-                        const orarioT = String(hT).padStart(2,'0') + ':' + String(mT).padStart(2,'0');
-                        vociGiorno.push({
-                            orario: orarioT,
-                            titolo: '🎬 Trailer: ' + trailerFilm.title,
-                            tmdbId: trailerFilm.id || trailerFilm.tmdbId || null,
-                            durata: TRAILER_DURATA,
-                            filmLink: trailerFilm.trailerLink,
-                            isTrailer: true
-                        });
-                        cursoreMin += TRAILER_DURATA;
-                    }
-                }
-
-                if (cursoreMin + durata > 18 * 60 + 30) break; // non sforare troppo
-
-                const hF = Math.floor(cursoreMin / 60) % 24;
-                const mF = cursoreMin % 60;
-                const orarioF = String(hF).padStart(2,'0') + ':' + String(mF).padStart(2,'0');
-                vociGiorno.push({
-                    orario: orarioF,
-                    titolo: film.title,
-                    tmdbId: film.id || film.tmdbId || null,
-                    durata: durata,
-                    filmLink: film.filmLink,
-                    isTrailer: false
-                });
-                cursoreMin += durata;
-                if (ci > classiciShuffled.length * 3) break; // safety
-            }
-
-            // Film recenti: 18:00 → 01:00 (1500 min)
-            cursoreMin = Math.max(cursoreMin, 18 * 60);
-            const recentiShuffled = shuffle(filmRecenti.length > 0 ? filmRecenti : tuttiFilm);
-            let ri = 0;
-            const FINE_SERA = 25 * 60; // 01:00 del giorno dopo
-            while (cursoreMin < FINE_SERA) {
-                const film = recentiShuffled[ri % Math.max(recentiShuffled.length, 1)];
-                ri++;
-                const durata = await getDurata(film);
-
-                // Trailer prima del film serale
-                for (let t = 0; t < N_TRAILER; t++) {
-                    const trailerFilm = recentiShuffled[(ri + t) % recentiShuffled.length];
-                    if (trailerFilm && trailerFilm.trailerLink) {
-                        const hT = Math.floor(cursoreMin / 60) % 24;
-                        const mT = cursoreMin % 60;
-                        const orarioT = String(hT).padStart(2,'0') + ':' + String(mT).padStart(2,'0');
-                        vociGiorno.push({
-                            orario: orarioT,
-                            titolo: '🎬 Trailer: ' + trailerFilm.title,
-                            tmdbId: trailerFilm.id || trailerFilm.tmdbId || null,
-                            durata: TRAILER_DURATA,
-                            filmLink: trailerFilm.trailerLink,
-                            isTrailer: true
-                        });
-                        cursoreMin += TRAILER_DURATA;
-                    }
-                }
-
-                if (cursoreMin + durata > FINE_SERA + 30) break;
-
-                const hF = Math.floor(cursoreMin / 60) % 24;
-                const mF = cursoreMin % 60;
-                const orarioF = String(hF).padStart(2,'0') + ':' + String(mF).padStart(2,'0');
-                vociGiorno.push({
-                    orario: orarioF,
-                    titolo: film.title,
-                    tmdbId: film.id || film.tmdbId || null,
-                    durata: durata,
-                    filmLink: film.filmLink,
-                    isTrailer: false
-                });
-                cursoreMin += durata;
-                if (ri > recentiShuffled.length * 3) break; // safety
-            }
-
-            // 5. Scrivi su Firebase (prima cancella il giorno esistente)
-            const ref = firebase.database().ref('palinsesto/' + chiave);
-            await ref.remove();
-            for (const voce of vociGiorno) {
-                await ref.push(voce);
-            }
+        function toOrario(min) {
+            // NON usa % 24: orari oltre mezzanotte restano 24:xx, 25:xx ecc.
+            // così Firebase li ordina correttamente dopo i 23:xx
+            const h = Math.floor(min / 60);
+            const m = min % 60;
+            return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
         }
 
-        setStatus('✅ Palinsesto generato per 30 giorni! Ricarico...');
+        const TRAILER_MIN = 3;
+        const N_TRAILER   = 3;
+        const FINE_SERA   = 24 * 60; // mezzanotte: nessun orario va nel giorno dopo
+
+        for (let giorno = 0; giorno < 30; giorno++) {
+            const data  = getDataGiorno(giorno);
+            const chiave = getChiaveGiorno(data);
+            setStatus('Generando giorno ' + (giorno+1) + '/30: ' + chiave + '...');
+
+            const vociGiorno = [];
+            let cursore = 8 * 60; // 08:00
+
+            // --- FASCIA DIURNA: classici 08:00-18:00 ---
+            const classici = shuffle(filmClassici.length ? filmClassici : tuttiFilm);
+            let ci = 0;
+            while (cursore < 18*60) {
+                // 3 trailer dei prossimi film
+                for (let t = 0; t < N_TRAILER; t++) {
+                    const tf = classici[(ci+t) % classici.length];
+                    if (tf && tf.trailerLink) {
+                        vociGiorno.push({ orario: toOrario(cursore), titolo: '🎬 Trailer: '+tf.title, tmdbId: tf.id||tf.tmdbId||null, durata: TRAILER_MIN, filmLink: tf.trailerLink, isTrailer: true });
+                        cursore += TRAILER_MIN;
+                    }
+                }
+                const film = classici[ci % classici.length];
+                ci++;
+                const durata = await getDurata(film);
+                if (cursore + durata > 18*60 + 30) break;
+                vociGiorno.push({ orario: toOrario(cursore), titolo: film.title, tmdbId: film.id||film.tmdbId||null, durata, filmLink: film.filmLink, isTrailer: false });
+                cursore += durata;
+                if (ci > classici.length * 4) break;
+            }
+
+            // --- FASCIA SERALE: recenti 18:00-01:00 ---
+            cursore = Math.max(cursore, 18*60);
+            const recenti = shuffle(filmRecenti.length ? filmRecenti : tuttiFilm);
+            let ri = 0;
+            while (cursore < FINE_SERA) {
+                // 3 trailer dei prossimi film serali
+                for (let t = 0; t < N_TRAILER; t++) {
+                    const tf = recenti[(ri+t) % recenti.length];
+                    if (tf && tf.trailerLink) {
+                        vociGiorno.push({ orario: toOrario(cursore), titolo: '🎬 Trailer: '+tf.title, tmdbId: tf.id||tf.tmdbId||null, durata: TRAILER_MIN, filmLink: tf.trailerLink, isTrailer: true });
+                        cursore += TRAILER_MIN;
+                    }
+                }
+                const film = recenti[ri % recenti.length];
+                ri++;
+                const durata = await getDurata(film);
+                if (cursore + durata > FINE_SERA + 30) break;
+                vociGiorno.push({ orario: toOrario(cursore), titolo: film.title, tmdbId: film.id||film.tmdbId||null, durata, filmLink: film.filmLink, isTrailer: false });
+                cursore += durata;
+                if (ri > recenti.length * 4) break;
+            }
+
+            // Scrivi su Firebase
+            const ref = firebase.database().ref('palinsesto/' + chiave);
+            await ref.remove();
+            for (const voce of vociGiorno) await ref.push(voce);
+        }
+
+        setStatus('✅ Palinsesto generato per 30 giorni!');
         caricaPalinsesto();
     };
 
     // ===== AVVIO =====
     document.addEventListener('DOMContentLoaded', () => {
+        registraHandler();
+
         auth.onAuthStateChanged((user) => {
             const adminPanel = document.getElementById('admin-panel');
             const loginBtn = document.getElementById('auth-status-btn');
