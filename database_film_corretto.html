@@ -54,11 +54,11 @@
         #palinsesto-table th { background-color: #1a1a2e; color: #e94560; padding: 10px 15px; text-align: left; }
         #palinsesto-table td { padding: 10px 15px; border-bottom: 1px solid #2e4a81; color: #e0e0e0; }
         #palinsesto-table tr:hover td { background-color: #16213e; }
-        #palinsesto-form { margin-top: 20px; padding: 15px; border-radius: 8px; background: #1a1a2e; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; border: 1px solid #2e4a81; }
-        #palinsesto-form h3 { width: 100%; margin: 0 0 10px 0; color: #e0e0e0; }
-        #orario-input { padding: 10px; border-radius: 5px; border: 1px solid #2e4a81; background-color: #0a1f3c; color: #e0e0e0; font-size: 1em; }
-        #film-select { flex-grow: 1; margin-bottom: 0; padding: 10px; }
-        #player-banner { display: none; width: 90%; max-width: 1200px; background: linear-gradient(135deg, #1a1a2e, #16213e); border: 2px solid #e94560; border-radius: 10px; padding: 20px; margin-bottom: 20px; text-align: center; box-sizing: border-box; }
+        #palinsesto-table tr.in-onda-row { cursor: pointer; transition: background-color 0.2s; }
+        #palinsesto-table tr.in-onda-row:hover { background-color: #1a4a3a !important; }
+        #player-banner { display: none; width: 90%; max-width: 1200px; background: linear-gradient(135deg, #1a1a2e, #16213e); border: 2px solid #e94560; border-radius: 10px; padding: 20px; margin-bottom: 20px; text-align: center; box-sizing: border-box; position: relative; }
+        .close-banner { position: absolute; top: 10px; right: 15px; color: #aaa; cursor: pointer; font-size: 20px; font-weight: bold; }
+        .close-banner:hover { color: white; }
         #player-banner h3 { color: #e94560; margin: 0 0 5px 0; font-size: 1em; text-transform: uppercase; letter-spacing: 2px; }
         #player-banner-titolo { color: white; font-size: 1.6em; font-weight: bold; display: block; margin-bottom: 5px; }
         #player-banner-orario { color: #aaa; font-size: 0.9em; display: block; margin-bottom: 15px; }
@@ -138,10 +138,11 @@
     </div>
 
     <div id="player-container">
-        <iframe id="player-iframe" src="" allowfullscreen scrolling="no" frameborder="0"></iframe>
+        <iframe id="player-iframe" src="" allow="autoplay; fullscreen" allowfullscreen scrolling="no" frameborder="0"></iframe>
     </div>
 
     <div id="player-banner">
+        <span class="close-banner" onclick="document.getElementById('player-banner').style.display='none'">&times;</span>
         <h3>🔴 Ora in Onda</h3>
         <span id="player-banner-titolo"></span>
         <span id="player-banner-orario"></span>
@@ -246,31 +247,8 @@
     let isAdmin = false;
     let debugMinuti = null; // null = orario reale; numero = orario simulato per test
     let debugChiave = null; // chiave giorno simulata (es: 2026-05-19)
+    let bannerForzato = false; // se l'utente ha cliccato per aprire il banner
 
-            // ===== AUTH =====
-    auth.onAuthStateChanged((user) => {
-        const adminPanel = document.getElementById('admin-panel');
-        const loginBtn = document.getElementById('auth-status-btn');
-        const logoutBtn = document.getElementById('logout-btn');
-
-        if (user && user.uid === ADMIN_UID) {
-            isAdmin = true;
-            adminPanel.style.display = 'block';
-            loginBtn.style.display = 'none';
-            logoutBtn.style.display = 'inline-block';
-            document.getElementById('debug-panel').style.display = 'block';
-        } else {
-            isAdmin = false;
-            adminPanel.style.display = 'none';
-            loginBtn.style.display = 'inline-block';
-            logoutBtn.style.display = 'none';
-            document.getElementById('debug-panel').style.display = 'none';
-            if (typeof resetDebugOrario === 'function') resetDebugOrario();
-        }
-        loadMovies();
-        caricaPalinsesto();
-        popolaSelectFilm();
-    });
 
     window.loginAdmin = function () {
         const email = prompt("Inserisci la tua email:");
@@ -592,6 +570,14 @@
                 if (inOnda) {
                     tr.style.backgroundColor = '#1a3a2a';
                     tr.style.borderLeft = '3px solid #e94560';
+                    tr.classList.add('in-onda-row');
+                    tr.title = "Clicca per guardare questo film";
+                    tr.onclick = () => {
+                        bannerForzato = true;
+                        aggiornaBannerPlayer();
+                        // Scroll al banner
+                        document.getElementById('player-banner').scrollIntoView({ behavior: 'smooth' });
+                    };
                 }
                 if (sovrapposto) {
                     tr.classList.add('sovrapposizione');
@@ -861,23 +847,19 @@
             }
 
             // Aggiornamento UI Player
-            if (filmInOnda) {
+            if (filmInOnda && bannerForzato) {
                 let link = filmInOnda.filmLink || null;
                 if (link && link.includes('mixdrop.co/f/'))  link = link.replace('mixdrop.co/f/', 'mixdrop.co/e/');
                 if (link && link.includes('mixdrop.top/f/')) link = link.replace('mixdrop.top/f/', 'mixdrop.top/e/');
 
                 const filmKey = link || ('__nolink__' + filmInOnda.orario + filmInOnda.titolo);
 
-                if (playerIframe.dataset.currentLink !== filmKey) {
-                    playerIframe.dataset.currentLink = filmKey;
-                    if (link) {
-                        playerIframe.src = link;
-                        playerContainer.style.display = 'block';
-                    } else {
-                        playerIframe.src = '';
-                        playerContainer.style.display = 'none';
-                    }
-                } else if (link) {
+                // Mostriamo il banner
+                banner.style.display = 'block';
+
+                // Il player container appare SOLO se l'utente clicca il pulsante "Guarda Ora" 
+                // o se era già aperto per questo film
+                if (playerIframe.dataset.currentLink === filmKey && link) {
                     playerContainer.style.display = 'block';
                 }
 
@@ -888,8 +870,18 @@
 
                     document.getElementById('player-banner-titolo').textContent = filmInOnda.titolo;
                     document.getElementById('player-banner-orario').textContent = `🎬 Inizio: ${filmInOnda.orario}  |  🏁 Fine: ${orarioFine}`;
-                    document.getElementById('player-banner-btn').href = link;
                     
+                    // Modifichiamo il comportamento del pulsante "Guarda Ora"
+                    const btn = document.getElementById('player-banner-btn');
+                    btn.href = "javascript:void(0)";
+                    btn.onclick = () => {
+                        if (playerIframe.dataset.currentLink !== filmKey) {
+                            playerIframe.dataset.currentLink = filmKey;
+                            playerIframe.src = link;
+                        }
+                        playerContainer.style.display = 'block';
+                    };
+
                     const minutiTrascorsi = minutiAdesso - filmInOnda.inizioMin;
                     if (minutiTrascorsi > 0) {
                         const ore = Math.floor(minutiTrascorsi / 60);
@@ -900,12 +892,12 @@
                         skipMsg.textContent = '';
                     }
                     document.getElementById('player-banner-prossimo').textContent = prossimoFilm ? `⏭️ Prossimamente ore ${prossimoFilm.orario}: ${prossimoFilm.titolo}` : '';
-                    banner.style.display = 'block';
                 } else {
-                    banner.style.display = 'none';
-                    skipMsg.textContent = '';
+                    skipMsg.textContent = '⚠️ Questo film non ha un link per lo streaming.';
+                    document.getElementById('player-banner-btn').style.display = 'none';
                 }
             } else {
+                if (!filmInOnda) bannerForzato = false; // Reset se il film finisce
                 banner.style.display = 'none';
                 playerContainer.style.display = 'none';
                 playerIframe.src = '';
@@ -952,6 +944,30 @@
     };
 
     // ===== AVVIO =====
+    auth.onAuthStateChanged((user) => {
+        const adminPanel = document.getElementById('admin-panel');
+        const loginBtn = document.getElementById('auth-status-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        if (user && user.uid === ADMIN_UID) {
+            isAdmin = true;
+            adminPanel.style.display = 'block';
+            loginBtn.style.display = 'none';
+            logoutBtn.style.display = 'inline-block';
+            document.getElementById('debug-panel').style.display = 'block';
+        } else {
+            isAdmin = false;
+            adminPanel.style.display = 'none';
+            loginBtn.style.display = 'inline-block';
+            logoutBtn.style.display = 'none';
+            document.getElementById('debug-panel').style.display = 'none';
+            if (typeof resetDebugOrario === 'function') resetDebugOrario();
+        }
+        loadMovies();
+        caricaPalinsesto();
+        popolaSelectFilm();
+    });
+
     aggiornaBanner();
     aggiornaBannerPlayer();
     setInterval(aggiornaBanner, 30000);
