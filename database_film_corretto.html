@@ -573,14 +573,7 @@
                     tr.classList.add('in-onda-row');
                     tr.title = "Clicca per guardare questo film";
                     tr.onclick = () => {
-                        console.log("Riga cliccata:", voce.titolo);
-                        bannerForzato = true;
-                        // Forza i dati di questo film specifico nel banner
-                        aggiornaBannerPlayer(voce);
-                        // Scroll al banner
-                        const bannerEl = document.getElementById('player-banner');
-                        bannerEl.style.display = 'block';
-                        bannerEl.scrollIntoView({ behavior: 'smooth' });
+                        window.apriManualmenteFilm(voce);
                     };
                 }
                 if (sovrapposto) {
@@ -750,7 +743,59 @@
     }
 
     // ===== BANNER PLAYER =====
+    window.apriManualmenteFilm = (film) => {
+        console.log("Apertura manuale:", film.titolo);
+        bannerForzato = true;
+        
+        const banner = document.getElementById('player-banner');
+        const titleEl = document.getElementById('player-banner-titolo');
+        const timeEl = document.getElementById('player-banner-orario');
+        const btn = document.getElementById('player-banner-btn');
+        const container = document.getElementById('player-container');
+        const iframe = document.getElementById('player-iframe');
+        
+        titleEl.textContent = film.titolo;
+        timeEl.textContent = `🎬 Orario programmato: ${film.orario}`;
+        
+        banner.style.display = 'block';
+        btn.style.display = 'inline-block';
+        
+        let link = film.filmLink || "";
+        if (link && link.includes('mixdrop.co/f/'))  link = link.replace('mixdrop.co/f/', 'mixdrop.co/e/');
+        if (link && link.includes('mixdrop.top/f/')) link = link.replace('mixdrop.top/f/', 'mixdrop.top/e/');
+
+        if (link) {
+            btn.onclick = () => {
+                iframe.src = link;
+                iframe.dataset.currentLink = link;
+                container.style.display = 'block';
+                
+                // Messaggio skip
+                const oggi = new Date();
+                const [h, m] = film.orario.split(':').map(Number);
+                const inizioMin = h * 60 + m;
+                const minutiAdesso = (debugMinuti !== null) ? debugMinuti : oggi.getHours() * 60 + oggi.getMinutes();
+                const diff = minutiAdesso - inizioMin;
+                
+                let skipMsg = document.getElementById('skip-message');
+                if (skipMsg && diff > 0) {
+                    const ore = Math.floor(diff / 60);
+                    const minuti = diff % 60;
+                    const tempo = ore > 0 ? `${ore}h ${minuti}m` : `${minuti} minuti`;
+                    skipMsg.textContent = `⏱️ Il film è iniziato da ${tempo}, vai avanti manualmente nel player.`;
+                }
+            };
+        } else {
+            btn.style.display = 'none';
+            alert("Questo film non ha un link di streaming.");
+        }
+        
+        banner.scrollIntoView({ behavior: 'smooth' });
+    };
+
     const aggiornaBannerPlayer = async (filmForzato = null) => {
+        if (bannerForzato && !filmForzato) return; // Se aperto manualmente, non disturbare
+        
         const oggi = new Date();
         const chiave = debugChiave || getChiaveGiorno(getDataGiorno(giornoVisualizzato));
 
