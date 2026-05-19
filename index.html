@@ -573,10 +573,13 @@
                     tr.classList.add('in-onda-row');
                     tr.title = "Clicca per guardare questo film";
                     tr.onclick = () => {
+                        console.log("Riga cliccata:", voce.titolo);
                         bannerForzato = true;
                         aggiornaBannerPlayer();
                         // Scroll al banner
-                        document.getElementById('player-banner').scrollIntoView({ behavior: 'smooth' });
+                        const bannerEl = document.getElementById('player-banner');
+                        bannerEl.style.display = 'block';
+                        bannerEl.scrollIntoView({ behavior: 'smooth' });
                     };
                 }
                 if (sovrapposto) {
@@ -748,7 +751,9 @@
     // ===== BANNER PLAYER =====
     const aggiornaBannerPlayer = async () => {
         const oggi = new Date();
-        const chiave = debugChiave || getChiaveGiorno(oggi);
+        // Se stiamo simulando, usiamo la chiave di debug. 
+        // Altrimenti, se abbiamo cliccato su un film di un altro giorno nel palinsesto, usiamo quel giorno.
+        const chiave = debugChiave || getChiaveGiorno(getDataGiorno(giornoVisualizzato));
 
         try {
             const snapshot = await firebase.database().ref(`palinsesto/${chiave}`).once('value');
@@ -873,6 +878,7 @@
                     
                     // Modifichiamo il comportamento del pulsante "Guarda Ora"
                     const btn = document.getElementById('player-banner-btn');
+                    btn.style.display = 'inline-block';
                     btn.href = "javascript:void(0)";
                     btn.onclick = () => {
                         if (playerIframe.dataset.currentLink !== filmKey) {
