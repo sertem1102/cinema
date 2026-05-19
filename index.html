@@ -932,7 +932,9 @@
                     const btn = document.getElementById('player-banner-btn');
                     btn.style.display = 'inline-block';
                     btn.href = "javascript:void(0)";
-                    btn.onclick = () => {
+                    btn.target = "_self"; // Forza l'apertura nella stessa finestra
+                    btn.onclick = (e) => {
+                        e.preventDefault();
                         if (playerIframe.dataset.currentLink !== filmKey) {
                             playerIframe.dataset.currentLink = filmKey;
                             playerIframe.src = link;
