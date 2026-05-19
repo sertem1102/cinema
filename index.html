@@ -182,6 +182,14 @@
                 <option value="">-- Scegli un film --</option>
             </select>
             <button onclick="aggiungiAlPalinsesto()">Aggiungi</button>
+            <hr style="border-color:#2e4a81; margin:20px 0;">
+            <h3>🤖 Genera Palinsesto Automatico</h3>
+            <p style="color:#aaa; font-size:0.9em;">Genera 30 giorni di palinsesto a partire da oggi. I film del 2025/2026 vanno in onda dalle 18:00 all'01:00, gli altri durante tutto il giorno. Prima di ogni film vengono inseriti 3 trailer dei film successivi.</p>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                <button onclick="generaPalinsesto()" style="background:#27ae60;">🎬 Genera 30 Giorni</button>
+                <button onclick="svuotaPalinsesto()" style="background:#c0392b; font-size:0.9em; padding:10px 18px;">🗑️ Svuota tutto il palinsesto</button>
+            </div>
+            <div id="genera-status" style="margin-top:12px; color:#f39c12; font-size:0.9em; font-weight:bold;"></div>
         </div>
     </div>
 
@@ -469,44 +477,30 @@
         document.getElementById('edit-modal').style.display = 'flex';
     }
 
-    // Questi handler vengono registrati solo dopo che il DOM è pronto
-    function registraHandler() {
-        const searchBtn = document.getElementById('search-movie-btn');
-        if (searchBtn) searchBtn.onclick = searchMovies;
+    document.getElementById('search-movie-btn').onclick = searchMovies;
 
-        const addBtn = document.getElementById('add-movie-btn');
-        if (addBtn) addBtn.onclick = () => {
-            currentMovieData.filmLink = document.getElementById('film-link')?.value || '';
-            currentMovieData.trailerLink = document.getElementById('trailer-link')?.value || '';
-            const langChecked = document.querySelector('input[name="audio-lang"]:checked');
-            currentMovieData.audioLanguage = langChecked ? langChecked.value : 'Italiano';
-            allMovies.push(currentMovieData);
-            saveMovies(allMovies);
-            const detForm = document.getElementById('movie-details-form');
-            if (detForm) detForm.style.display = 'none';
-            const searchEl = document.getElementById('tmdb-search');
-            if (searchEl) searchEl.value = '';
-        };
+    document.getElementById('add-movie-btn').onclick = () => {
+        currentMovieData.filmLink = document.getElementById('film-link').value;
+        currentMovieData.trailerLink = document.getElementById('trailer-link').value;
+        currentMovieData.audioLanguage = document.querySelector('input[name="audio-lang"]:checked').value;
+        allMovies.push(currentMovieData);
+        saveMovies(allMovies);
+        document.getElementById('movie-details-form').style.display = 'none';
+        document.getElementById('tmdb-search').value = '';
+    };
 
-        const saveEditBtn = document.getElementById('save-edit-btn');
-        if (saveEditBtn) saveEditBtn.onclick = () => {
-            const idx = allMovies.findIndex(m => m.id === editingMovieId);
-            if (idx === -1) return;
-            allMovies[idx].filmLink = document.getElementById('edit-film-link')?.value || '';
-            allMovies[idx].trailerLink = document.getElementById('edit-trailer-link')?.value || '';
-            const langChecked = document.querySelector('input[name="edit-audio-lang"]:checked');
-            allMovies[idx].audioLanguage = langChecked ? langChecked.value : 'Italiano';
-            saveMovies(allMovies);
-            const modal = document.getElementById('edit-modal');
-            if (modal) modal.style.display = 'none';
-        };
+    document.getElementById('save-edit-btn').onclick = () => {
+        const idx = allMovies.findIndex(m => m.id === editingMovieId);
+        allMovies[idx].filmLink = document.getElementById('edit-film-link').value;
+        allMovies[idx].trailerLink = document.getElementById('edit-trailer-link').value;
+        allMovies[idx].audioLanguage = document.querySelector('input[name="edit-audio-lang"]:checked').value;
+        saveMovies(allMovies);
+        document.getElementById('edit-modal').style.display = 'none';
+    };
 
-        const closeBtn = document.querySelector('.close-button');
-        if (closeBtn) closeBtn.onclick = () => {
-            const modal = document.getElementById('edit-modal');
-            if (modal) modal.style.display = 'none';
-        };
-    }
+    document.querySelector('.close-button').onclick = () => {
+        document.getElementById('edit-modal').style.display = 'none';
+    };
 
     document.querySelectorAll('.copy-btn').forEach(btn => {
         btn.onclick = () => {
@@ -553,7 +547,6 @@
         const ref = firebase.database().ref(`palinsesto/${chiave}`);
         ref.once('value', snapshot => {
             const tbody = document.getElementById('palinsesto-body');
-            if (!tbody) return;
             tbody.innerHTML = '';
 
             if (!snapshot.exists()) {
@@ -972,10 +965,203 @@
         }
     }
 
+
+    // ===== GENERATORE PALINSESTO AUTOMATICO =====
+
+    function setStatus(msg) {
+        const el = document.getElementById('genera-status');
+        if (el) el.textContent = msg;
+        console.log('[PALINSESTO]', msg);
+    }
+
+    window.svuotaPalinsesto = async function () {
+        if (!confirm('Sei sicuro di voler cancellare TUTTO il palinsesto dei prossimi 30 giorni?')) return;
+        setStatus('Svuotamento in corso...');
+        const promises = [];
+        for (let i = 0; i < 30; i++) {
+            const d = getDataGiorno(i);
+            const chiave = getChiaveGiorno(d);
+            promises.push(firebase.database().ref('palinsesto/' + chiave).remove());
+        }
+        await Promise.all(promises);
+        setStatus('✅ Palinsesto svuotato.');
+        caricaPalinsesto();
+    };
+
+    window.generaPalinsesto = async function () {
+        setStatus('Caricamento film dal database...');
+
+        // 1. Leggi tutti i film dal db
+        const snap = await firebase.database().ref('movies').once('value');
+        const raw = snap.val();
+        if (!raw) { setStatus('❌ Nessun film trovato nel database.'); return; }
+
+        const tuttiFilm = (Array.isArray(raw) ? raw : Object.values(raw))
+            .filter(m => m && m.title && m.filmLink);
+
+        if (tuttiFilm.length === 0) { setStatus('❌ Nessun film con link disponibile.'); return; }
+
+        const annoCorrente = new Date().getFullYear();
+        const filmRecenti  = tuttiFilm.filter(m => {
+            const y = parseInt(m.year || (m.release_date || '').substring(0,4));
+            return y >= 2025;
+        });
+        const filmClassici = tuttiFilm.filter(m => {
+            const y = parseInt(m.year || (m.release_date || '').substring(0,4));
+            return y < 2025;
+        });
+
+        setStatus('Film recenti: ' + filmRecenti.length + ' | Classici: ' + filmClassici.length + '. Recupero durate...');
+
+        // 2. Ottieni durate da TMDB (con cache)
+        const durataCache = {};
+        async function getDurata(film) {
+            const key = film.id || film.tmdbId || film.title;
+            if (durataCache[key]) return durataCache[key];
+            const tmdbId = film.id || film.tmdbId;
+            if (tmdbId) {
+                try {
+                    const r = await fetch(TMDB_BASE_URL + '/movie/' + tmdbId + '?api_key=' + API_KEY);
+                    const d = await r.json();
+                    durataCache[key] = d.runtime || 90;
+                    return durataCache[key];
+                } catch { }
+            }
+            durataCache[key] = 90;
+            return 90;
+        }
+
+        // 3. Scegli film casuali bilanciati per il giorno
+        function shuffle(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        // 4. Per ogni giorno genera il palinsesto
+        const TRAILER_DURATA = 3; // minuti per trailer
+        const N_TRAILER = 3;
+
+        for (let giorno = 0; giorno < 30; giorno++) {
+            const data = getDataGiorno(giorno);
+            const chiave = getChiaveGiorno(data);
+            setStatus('Generando giorno ' + (giorno + 1) + '/30: ' + chiave + '...');
+
+            // Slot disponibili:
+            // Classici: 08:00 → 18:00
+            // Recenti:  18:00 → 01:00 (= 60+25*60 = 1500 min)
+            // Tutto giorno: 08:00 → 01:00 (se classici riempiono anche oltre 18)
+
+            const vociGiorno = [];
+            let cursoreMin = 8 * 60; // 08:00
+
+            // Film classici: 08:00 – 18:00
+            const classiciShuffled = shuffle(filmClassici.length > 0 ? filmClassici : tuttiFilm);
+            let ci = 0;
+            while (cursoreMin < 18 * 60) {
+                const film = classiciShuffled[ci % Math.max(classiciShuffled.length, 1)];
+                ci++;
+                const durata = await getDurata(film);
+
+                // Inserisci trailer (film successivi in lista)
+                for (let t = 0; t < N_TRAILER; t++) {
+                    const trailerFilm = classiciShuffled[(ci + t) % classiciShuffled.length];
+                    if (trailerFilm && trailerFilm.trailerLink) {
+                        const hT = Math.floor(cursoreMin / 60) % 24;
+                        const mT = cursoreMin % 60;
+                        const orarioT = String(hT).padStart(2,'0') + ':' + String(mT).padStart(2,'0');
+                        vociGiorno.push({
+                            orario: orarioT,
+                            titolo: '🎬 Trailer: ' + trailerFilm.title,
+                            tmdbId: trailerFilm.id || trailerFilm.tmdbId || null,
+                            durata: TRAILER_DURATA,
+                            filmLink: trailerFilm.trailerLink,
+                            isTrailer: true
+                        });
+                        cursoreMin += TRAILER_DURATA;
+                    }
+                }
+
+                if (cursoreMin + durata > 18 * 60 + 30) break; // non sforare troppo
+
+                const hF = Math.floor(cursoreMin / 60) % 24;
+                const mF = cursoreMin % 60;
+                const orarioF = String(hF).padStart(2,'0') + ':' + String(mF).padStart(2,'0');
+                vociGiorno.push({
+                    orario: orarioF,
+                    titolo: film.title,
+                    tmdbId: film.id || film.tmdbId || null,
+                    durata: durata,
+                    filmLink: film.filmLink,
+                    isTrailer: false
+                });
+                cursoreMin += durata;
+                if (ci > classiciShuffled.length * 3) break; // safety
+            }
+
+            // Film recenti: 18:00 → 01:00 (1500 min)
+            cursoreMin = Math.max(cursoreMin, 18 * 60);
+            const recentiShuffled = shuffle(filmRecenti.length > 0 ? filmRecenti : tuttiFilm);
+            let ri = 0;
+            const FINE_SERA = 25 * 60; // 01:00 del giorno dopo
+            while (cursoreMin < FINE_SERA) {
+                const film = recentiShuffled[ri % Math.max(recentiShuffled.length, 1)];
+                ri++;
+                const durata = await getDurata(film);
+
+                // Trailer prima del film serale
+                for (let t = 0; t < N_TRAILER; t++) {
+                    const trailerFilm = recentiShuffled[(ri + t) % recentiShuffled.length];
+                    if (trailerFilm && trailerFilm.trailerLink) {
+                        const hT = Math.floor(cursoreMin / 60) % 24;
+                        const mT = cursoreMin % 60;
+                        const orarioT = String(hT).padStart(2,'0') + ':' + String(mT).padStart(2,'0');
+                        vociGiorno.push({
+                            orario: orarioT,
+                            titolo: '🎬 Trailer: ' + trailerFilm.title,
+                            tmdbId: trailerFilm.id || trailerFilm.tmdbId || null,
+                            durata: TRAILER_DURATA,
+                            filmLink: trailerFilm.trailerLink,
+                            isTrailer: true
+                        });
+                        cursoreMin += TRAILER_DURATA;
+                    }
+                }
+
+                if (cursoreMin + durata > FINE_SERA + 30) break;
+
+                const hF = Math.floor(cursoreMin / 60) % 24;
+                const mF = cursoreMin % 60;
+                const orarioF = String(hF).padStart(2,'0') + ':' + String(mF).padStart(2,'0');
+                vociGiorno.push({
+                    orario: orarioF,
+                    titolo: film.title,
+                    tmdbId: film.id || film.tmdbId || null,
+                    durata: durata,
+                    filmLink: film.filmLink,
+                    isTrailer: false
+                });
+                cursoreMin += durata;
+                if (ri > recentiShuffled.length * 3) break; // safety
+            }
+
+            // 5. Scrivi su Firebase (prima cancella il giorno esistente)
+            const ref = firebase.database().ref('palinsesto/' + chiave);
+            await ref.remove();
+            for (const voce of vociGiorno) {
+                await ref.push(voce);
+            }
+        }
+
+        setStatus('✅ Palinsesto generato per 30 giorni! Ricarico...');
+        caricaPalinsesto();
+    };
+
     // ===== AVVIO =====
     document.addEventListener('DOMContentLoaded', () => {
-        registraHandler();
-
         auth.onAuthStateChanged((user) => {
             const adminPanel = document.getElementById('admin-panel');
             const loginBtn = document.getElementById('auth-status-btn');
