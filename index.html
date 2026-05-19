@@ -560,21 +560,31 @@
             });
             voci.sort((a, b) => a.orario.localeCompare(b.orario));
 
-            const minutiAdesso = new Date().getHours() * 60 + new Date().getMinutes();
+            // Il pallino rosso ha senso solo se stiamo guardando il giorno corrente
+            const oggi = new Date();
+            const minutiAdesso = oggi.getHours() * 60 + oggi.getMinutes();
+            const isOggi = (giornoVisualizzato === 0);
 
             voci.forEach((voce, index) => {
                 const tr = document.createElement('tr');
                 const durataStr = voce.durata ? `${voce.durata} min` : '...';
 
                 const [h, m] = voce.orario.split(':').map(Number);
-                const inizioMin = h * 60 + m;
+                // Gestione orari oltre mezzanotte: se h < 6 e il film precedente era serale, è il giorno dopo
+                let inizioMin = h * 60 + m;
+                if (index > 0) {
+                    const [hPrec] = voci[index - 1].orario.split(':').map(Number);
+                    if (hPrec >= 20 && h < 6) inizioMin += 24 * 60; // normalizza oltre mezzanotte
+                }
                 const fineMin = inizioMin + (voce.durata || 90);
 
                 const hFine = Math.floor(fineMin / 60) % 24;
                 const mFine = fineMin % 60;
                 const orarioFine = `${String(hFine).padStart(2,'0')}:${String(mFine).padStart(2,'0')}`;
 
-                const inOnda = minutiAdesso >= inizioMin && minutiAdesso < fineMin;
+                // minutiAdesso normalizzato: se è dopo mezzanotte (0–5) lo trattiamo come 1440+
+                const minNorm = (oggi.getHours() < 6) ? minutiAdesso + 24 * 60 : minutiAdesso;
+                const inOnda = isOggi && minNorm >= inizioMin && minNorm < fineMin;
 
                 let sovrapposto = false;
                 if (index > 0) {
@@ -588,10 +598,7 @@
                     tr.style.backgroundColor = '#1a3a2a';
                     tr.style.borderLeft = '3px solid #e94560';
                     tr.classList.add('in-onda-row');
-                    tr.title = "Clicca per guardare questo film";
-                    tr.onclick = () => {
-                        window.apriManualmenteFilm(voce);
-                    };
+                    tr.title = 'Clicca per guardare';
                 }
                 if (sovrapposto) {
                     tr.classList.add('sovrapposizione');
@@ -601,8 +608,17 @@
                     <td>${inOnda ? '🔴 ' : ''}${sovrapposto ? '⚠️ ' : ''}${voce.orario} - ${orarioFine}</td>
                     <td>${voce.titolo}</td>
                     <td>${durataStr}</td>
-                    ${isAdmin ? `<td><button onclick="rimuoviDalPalinsesto('${chiave}','${voce.id}')" style="padding:5px 10px; font-size:0.8em;">🗑️ Rimuovi</button></td>` : ''}
+                    ${isAdmin ? `<td><button onclick="event.stopPropagation(); rimuoviDalPalinsesto('${chiave}','${voce.id}')" style="padding:5px 10px; font-size:0.8em;">🗑️ Rimuovi</button></td>` : ''}
                 `;
+
+                // onclick assegnato DOPO innerHTML per non essere sovrascritto
+                if (inOnda) {
+                    tr.onclick = (e) => {
+                        if (e.target.tagName === 'BUTTON') return; // ignora click sul Rimuovi
+                        window.apriManualmenteFilm(voce);
+                    };
+                }
+
                 tbody.appendChild(tr);
             });
         });
